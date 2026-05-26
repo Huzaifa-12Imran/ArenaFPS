@@ -164,46 +164,34 @@ class Player extends GameObject3D {
             this.weaponGroup.add(this.muzzleLight);
 
         } else if (wep.type === 'knife') {
-            // ── Tactical Knife ─────────────────────────────────────────────
+            // ── Classic Bowie Knife ─────────────────────────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.18, -0.24, -0.10);
+            G.position.set(0.18, -0.22, -0.15); // slightly more forward and up
 
-            const bladeMat  = new THREE.MeshStandardMaterial({ color: 0x909090, metalness: 0.95, roughness: 0.2 });
-            const edgeMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1.0,  roughness: 0.05 });
-            const handleMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9  });
-            const guardMat  = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.6,  roughness: 0.4 });
+            const bladeMat  = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.3 });
+            const edgeMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1.0, roughness: 0.1 });
+            const woodMat   = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.9 }); // dark wood handle
+            const guardMat  = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.4 }); // brass/steel guard
 
-            // Blade base
-            G.add(box(0.012, 0.035, 0.15, bladeMat, 0, 0.02, -0.12));
+            // Main blade body (thick and wide)
+            G.add(box(0.016, 0.05, 0.18, bladeMat, 0, 0.025, -0.15));
             // Blade edge (bottom)
-            const edge = box(0.008, 0.015, 0.15, edgeMat, 0, 0.0, -0.12);
-            // Angled tip
-            const tipG = new THREE.Group();
-            tipG.position.set(0, 0.02, -0.22);
-            tipG.add(box(0.012, 0.035, 0.08, bladeMat, 0, 0, 0));
-            tipG.add(box(0.008, 0.015, 0.08, edgeMat, 0, -0.02, 0));
-            tipG.rotation.x = -0.3; // curve upwards
-            G.add(tipG);
-            G.add(edge);
+            G.add(box(0.010, 0.015, 0.18, edgeMat, 0, -0.005, -0.15));
+            
+            // Clip point (angled top cut)
+            const clipG = new THREE.Group();
+            clipG.position.set(0, 0.035, -0.27);
+            clipG.add(box(0.016, 0.03, 0.08, bladeMat, 0, 0, 0));
+            clipG.add(box(0.010, 0.015, 0.08, edgeMat, 0, -0.02, 0));
+            clipG.rotation.x = -0.4;
+            G.add(clipG);
 
-            // Serrations on top
-            for(let i=0; i<4; i++) {
-                G.add(box(0.014, 0.01, 0.01, darkMat, 0, 0.04, -0.08 - i*0.02));
-            }
-
-            // Guard / crossguard (angled)
-            const guard = box(0.018, 0.06, 0.015, guardMat, 0, 0.01, -0.03);
-            guard.rotation.x = -0.2;
-            G.add(guard);
-
-            // Handle (ergonomic)
-            G.add(box(0.022, 0.035, 0.12, handleMat, 0, 0.01, 0.04));
-            G.add(box(0.024, 0.01, 0.10, guardMat, 0, 0.03, 0.04)); // tang
-
-            // Pommel ring (karambit style hint)
-            const pommel = new THREE.Mesh(new THREE.TorusGeometry(0.015, 0.006, 8, 16), guardMat);
-            pommel.position.set(0, 0.01, 0.11);
-            G.add(pommel);
+            // Large crossguard
+            G.add(box(0.022, 0.08, 0.015, guardMat, 0, 0.01, -0.05));
+            // Handle (thick wood)
+            G.add(box(0.026, 0.038, 0.12, woodMat, 0, 0.01, 0.02));
+            // Heavy pommel cap
+            G.add(box(0.03, 0.045, 0.02, guardMat, 0, 0.01, 0.09));
             
             this.weaponGroup.add(G);
 
@@ -224,50 +212,45 @@ class Player extends GameObject3D {
             this.weaponGroup.add(this.muzzleLight);
 
         } else {
-            // ── Tactical Pistol ───────────────────────────────────────────────────
+            // ── Heavy Pistol (Desert Eagle style) ───────────────────────────────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.20, -0.25, -0.18);
+            G.position.set(0.20, -0.25, -0.20); // prominent placement
 
-            // Slide (longer, sleeker)
-            G.add(box(0.042, 0.035, 0.22, metalMat, 0, 0.035, -0.02));
-            // Slide serrations
-            for(let i=0; i<4; i++) G.add(box(0.044, 0.035, 0.005, accentMat, 0, 0.035, 0.05 + i*0.01));
-            // Frame / lower
-            G.add(box(0.044, 0.035, 0.20, darkMat, 0, 0, 0));
-            // Compensator / Suppressor mount
-            G.add(box(0.045, 0.045, 0.05, accentMat, 0, 0.03, -0.15));
-            // Barrel opening
-            G.add(cyl(0.012, 0.012, 0.02, 8, metalMat, 0, 0.035, -0.18, Math.PI/2));
+            const silverMat = new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 0.85, roughness: 0.25 });
+            const blackMat  = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.8 });
+
+            // Massive Slide
+            G.add(box(0.05, 0.06, 0.28, silverMat, 0, 0.04, -0.05));
+            // Triangle cut on slide (signature look)
+            G.add(cyl(0.02, 0.02, 0.28, 3, silverMat, 0, 0.07, -0.05, Math.PI/2));
             
-            // Under-barrel Laser / Flashlight
-            G.add(box(0.03, 0.025, 0.08, darkMat, 0, -0.025, -0.06));
-            // Laser lens
-            const laserMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000 });
-            G.add(cyl(0.008, 0.008, 0.01, 8, laserMat, 0, -0.025, -0.105, Math.PI/2));
+            // Frame / Lower
+            G.add(box(0.046, 0.03, 0.24, silverMat, 0, 0.0, -0.03));
+            
+            // Big Barrel opening
+            G.add(cyl(0.016, 0.016, 0.02, 12, blackMat, 0, 0.05, -0.19, Math.PI/2));
 
-            // Trigger guard (square tactical)
-            G.add(box(0.035, 0.005, 0.07, darkMat, 0, -0.04, -0.01));
-            G.add(box(0.035, 0.03, 0.005, darkMat, 0, -0.025, -0.045));
+            // Heavy trigger guard
+            G.add(box(0.046, 0.015, 0.08, silverMat, 0, -0.04, -0.02)); // bottom
+            G.add(box(0.046, 0.04, 0.015, silverMat, 0, -0.02, -0.05)); // front
+            
             // Trigger
-            G.add(box(0.006, 0.025, 0.008, accentMat, 0, -0.025, 0.01));
+            G.add(box(0.01, 0.03, 0.015, blackMat, 0, -0.02, 0.01));
             
-            // Grip
+            // Chunky Grip
             const gripG = new THREE.Group();
-            gripG.position.set(0, -0.065, 0.06);
-            gripG.add(box(0.04, 0.11, 0.05, gripMat, 0, 0, 0));
+            gripG.position.set(0, -0.08, 0.06);
+            gripG.add(box(0.044, 0.12, 0.06, silverMat, 0, 0, 0)); // grip frame
+            gripG.add(box(0.05, 0.11, 0.05, blackMat, 0, 0, 0)); // rubber grip panels
             gripG.rotation.x = 0.15;
             G.add(gripG);
             
-            // Extended Magazine base
-            G.add(box(0.045, 0.015, 0.055, accentMat, 0, -0.125, 0.075));
+            // Magazine Base
+            G.add(box(0.046, 0.015, 0.06, blackMat, 0, -0.14, 0.08));
             
-            // Iron sights
-            // Front dot (green glow)
-            const sightMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00 });
-            G.add(box(0.006, 0.01, 0.006, darkMat, 0, 0.055, -0.11));
-            G.add(box(0.004, 0.004, 0.004, sightMat, 0, 0.058, -0.115)); // dot
-            // Rear sight
-            G.add(box(0.035, 0.012, 0.01, darkMat, 0, 0.055, 0.08));
+            // Iron Sights (blocky)
+            G.add(box(0.01, 0.015, 0.015, blackMat, 0, 0.075, -0.17)); // front
+            G.add(box(0.04, 0.015, 0.02, blackMat, 0, 0.075, 0.08)); // rear
 
             this.weaponGroup.add(G);
 
@@ -286,7 +269,7 @@ class Player extends GameObject3D {
 
             // Muzzle flash light
             this.muzzleLight = new THREE.PointLight(0xffaa33, 0, 6);
-            this.muzzleLight.position.set(0.20, -0.215, -0.36);
+            this.muzzleLight.position.set(0.20, -0.20, -0.40);
             this.weaponGroup.add(this.muzzleLight);
         }
 
