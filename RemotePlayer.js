@@ -31,95 +31,81 @@ class RemotePlayer extends GameObject3D {
     }
 
     _buildModel() {
-        if (!window.characterGLTF || !window.SkeletonUtils) {
-            this._buildFallback();
-            return;
-        }
-
-        const isRed = this.team === 'red';
+        const isRed   = this.team === 'red';
         const teamHex = isRed ? 0xcc2222 : 0x2255cc;
 
-        // Clone the model using SkeletonUtils (safely, since we don't hack bones anymore)
-        const model = window.SkeletonUtils.clone(window.characterGLTF.scene);
+        // ─────────────────────────────────────────────────────────────────────
+        // WHY NOT SkeletonUtils.clone?
+        // Babylon exports the character as multiple sibling SkinnedMeshes (body,
+        // hands, feet) sharing ONE skeleton. SkeletonUtils.clone only remaps the
+        // skeleton for SkinnedMeshes that are *children* of the cloned root; any
+        // sibling meshes stay bound to the ORIGINAL skeleton and fly off to their
+        // bind-pose world position — producing the "floating hands/feet" bug.
+        //
+        // WHY fresh GLTFLoader.load?
+        // Each call returns a fully independent scene+skeleton. No remap needed.
+        // The browser caches the GLB after the first load, so every subsequent
+        // call is instant (no extra network traffic).
+        // ─────────────────────────────────────────────────────────────────────
+        const loader = new THREE.GLTFLoader();
+        loader.load('dummy3.glb', (gltf) => {
+            const model = gltf.scene;
 
-        // ─────────────────────────────────────────────────────────────────────
-        // THE TRUE SOLUTION
-        // ─────────────────────────────────────────────────────────────────────
-        // GLTFLoader automatically handles glTF unit conversions. The dummy3.glb 
-        // model is already perfectly scaled to ~1.7 meters tall in Three.js units.
-        // There is no double-scale bug. Scaling the model by 0.01 shrinks it to
-        // 1.7 centimeters. We just need to leave the scale at 1.0!
-        // ─────────────────────────────────────────────────────────────────────
-        const SCALE = 1.0;
-        
-        model.scale.set(SCALE, SCALE, SCALE);
-        
-        // We offset Y by -1.5 because the BotAI/Player position is the center of the 
-        // 1.7m physics capsule (Y=1.5 from the floor).
-        model.position.y = -1.5; 
-        model.rotation.y = Math.PI;
+            // The GLTFLoader already outputs the scene in meters.
+            // No scaling needed — the model is ~1.7 m tall at scale 1.0.
+            model.scale.set(1, 1, 1);
 
-        // Apply Team Colors
-        model.traverse(child => {
-            if (child.isSkinnedMesh) {
-                child.frustumCulled = false;
-                child.castShadow = true;
-                if (child.material) {
-                    const applyMat = (m) => {
-                        const c = m.clone();
-                        c.color.setHex(teamHex);
-                        if (c.isMeshStandardMaterial || c.isMeshPhysicalMaterial) {
-                            c.metalness = 0.0;
-                            c.roughness = 1.0;
-                        }
-                        return c;
-                    };
-                    child.material = Array.isArray(child.material) 
-                        ? child.material.map(applyMat) 
-                        : applyMat(child.material);
+            // The entity's physics position is the capsule centre (Y ≈ 1.5 m).
+            // Offset the mesh down so feet sit on the floor at world Y = 0.
+            model.position.y = -1.5;
+            model.rotation.y = Math.PI;
+
+            // Color every SkinnedMesh; hide any static geometry baked into the GLB.
+            model.traverse(child => {
+                if (child.isSkinnedMesh) {
+                    child.frustumCulled = false;
+                    child.castShadow    = true;
+                    if (child.material) {
+                        const tint = m => {
+                            const c = m.clone();
+                            c.color.setHex(teamHex);
+                            if (c.isMeshStandardMaterial || c.isMeshPhysicalMaterial) {
+                                c.metalness = 0.0;
+                                c.roughness = 1.0;
+                            }
+                            return c;
+                        };
+                        child.material = Array.isArray(child.material)
+                            ? child.material.map(tint)
+                            : tint(child.material);
+                    }
+                } else if (child.isMesh) {
+                    child.visible = false; // hide baked ground-plane / other static geo
                 }
-            } else if (child.isMesh) {
-                // Hide any static geometry (like the massive red ground plane!)
-                child.visible = false;
+            });
+
+            this.mesh.add(model);
+            this._model = model;
+
+            // AnimationMixer on the fresh model — clips are also from this fresh gltf,
+            // so bone track paths resolve correctly with no cross-scene ambiguity.
+            this._mixer   = new THREE.AnimationMixer(model);
+            this._actions = {};
+            for (const clip of gltf.animations) {
+                const action = this._mixer.clipAction(clip);
+                action.loop  = THREE.LoopRepeat;
+                this._actions[clip.name] = action;
             }
+
+            this._animIdle = this._resolveAnimName(['YBot_Idle', 'idle', 'Idle']);
+            this._animWalk = this._resolveAnimName(['YBot_Walk', 'walk', 'Walk']);
+            this._animRun  = this._resolveAnimName(['YBot_Run',  'run',  'Run']);
+            this._playAnim(this._animIdle);
+
+        }, undefined, err => {
+            console.error('[RemotePlayer] GLB load failed, using fallback', err);
+            this._buildFallback();
         });
-
-        // Name Tag (Added to this.mesh so it avoids the double scale bug completely)
-        this._nameTag = this._makeNameTag();
-        this._nameTag.scale.set(1.5, 0.375, 1);
-        this._nameTag.position.set(0, 0.5, 0); // 0.5m above the physics center (1.5 + 0.5 = 2.0m world height)
-        this.mesh.add(this._nameTag);
-
-        // Ground Ring (Added to this.mesh so it avoids the double scale bug completely)
-        const ringGeo = new THREE.RingGeometry(0.50, 0.62, 24);
-        const ringMat = new THREE.MeshBasicMaterial({
-            color: teamHex, side: THREE.DoubleSide, transparent: true, opacity: 0.8
-        });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.rotation.x = Math.PI / 2;
-        ring.position.y = -1.48; // Floor level (-1.5 + 0.02)
-        this.mesh.add(ring);
-
-        this.mesh.add(model);
-        this._model = model;
-
-        // Animations
-        this._mixer = new THREE.AnimationMixer(model);
-        this._actions = {};
-        for (const clip of window.characterGLTF.animations) {
-            const action = this._mixer.clipAction(clip);
-            action.loop = THREE.LoopRepeat;
-            this._actions[clip.name] = action;
-        }
-
-        this._animIdle = this._resolveAnimName(['YBot_Idle', 'idle', 'Idle']);
-        this._animWalk = this._resolveAnimName(['YBot_Walk', 'walk', 'Walk']);
-        this._animRun  = this._resolveAnimName(['YBot_Run', 'run', 'Run']);
-        
-        this._playAnim(this._animIdle);
-        
-        // Sync headshot height with actual visual head.
-        this.headHeight = 1.55; 
     }
 
     _resolveAnimName(candidates) {
