@@ -52,18 +52,10 @@ class RemotePlayer extends GameObject3D {
         loader.load('dummy3.glb', (gltf) => {
             const model = gltf.scene;
 
-            // Recalculate inverses BEFORE moving the model to avoid baking offsets
-            model.updateMatrixWorld(true);
-            model.traverse(child => {
-                if (child.isSkinnedMesh) {
-                    child.skeleton.calculateInverses();
-                }
-            });
-
-            // The entity's physics position is the capsule centre (Y ≈ 1.5 m).
-            // Offset the mesh down so feet sit on the floor at world Y = 0.
+            // Do NOT apply any position offsets to the raw GLTF scene.
+            // Moving SkinnedMeshes locally can break their bind matrices 
+            // if exported improperly from Babylon.
             model.scale.set(1, 1, 1);
-            model.position.y = -1.5;
             model.rotation.y = Math.PI;
 
             // Color every SkinnedMesh; hide any static geometry
@@ -244,13 +236,17 @@ class RemotePlayer extends GameObject3D {
                 this._playAnim(this._animRun || this._animWalk || 'YBot_Run');
         }
 
-        if (this._mixer) this._mixer.update(dt);
-
-        if (this.weapon) this.weapon.update(dt, this.position, this.rotation);
-
         this.position.lerp(this.targetPos, 0.15);
         this.rotation.y += (this.targetRotY - this.rotation.y) * 0.15;
         super.update(dt);
+        
+        this.mesh.position.y = this.position.y - 1.5;
+
+        if (this._mixer) {
+            this._mixer.update(dt);
+        }
+
+        if (this.weapon) this.weapon.update(dt, this.position, this.rotation);
 
         if (this._nameTag && window.game && window.game.camera)
             this._nameTag.lookAt(window.game.camera.position);
