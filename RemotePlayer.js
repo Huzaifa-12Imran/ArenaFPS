@@ -61,9 +61,17 @@ class RemotePlayer extends GameObject3D {
             model.position.y = -1.5;
             model.rotation.y = Math.PI;
 
-            // Color every SkinnedMesh; hide any static geometry baked into the GLB.
+            // Color every SkinnedMesh; hide any static geometry or corrupted joints
             model.traverse(child => {
                 if (child.isSkinnedMesh) {
+                    // Babylon export bug: The 'Joints' mesh (spheres for fingers/knees) 
+                    // has corrupted skinning indices in Three.js, causing the shards.
+                    // We simply hide it. The main body looks perfect without it.
+                    if (child.name.includes('Joints')) {
+                        child.visible = false;
+                        return;
+                    }
+
                     child.frustumCulled = false;
                     child.castShadow    = true;
                     if (child.material) {
@@ -85,39 +93,14 @@ class RemotePlayer extends GameObject3D {
                 }
             });
 
-            this.mesh.add(model);
-            this._model = model;
-
-            // Normalize skin weights on all SkinnedMeshes.
-            // Babylon GLB exports sometimes have secondary meshes (fingers, toes)
-            // with skin weights that don't sum to 1.0, causing vertices to fly out.
-            let masterSkeleton = null;
-            let maxBones = 0;
-            model.traverse(node => {
-                if (node.isSkinnedMesh) {
-                    node.normalizeSkinWeights();
-                    if (node.skeleton && node.skeleton.bones.length > maxBones) {
-                        maxBones = node.skeleton.bones.length;
-                        masterSkeleton = node.skeleton;
-                    }
-                }
-            });
-
-            if (masterSkeleton) {
-                model.traverse(node => {
-                    if (node.isSkinnedMesh && node.skeleton !== masterSkeleton) {
-                        node.skeleton = masterSkeleton;
-                        // Use the original bind matrix
-                        node.bind(masterSkeleton, node.bindMatrix);
-                    }
-                });
-            }
-
             // Name tag
             this._nameTag = this._makeNameTag();
             this._nameTag.scale.set(1.5, 0.375, 1);
             this._nameTag.position.set(0, 0.5, 0);
             this.mesh.add(this._nameTag);
+
+            this.mesh.add(model);
+            this._model = model;
 
             // Ground ring
             const ringGeo = new THREE.RingGeometry(0.50, 0.62, 24);
