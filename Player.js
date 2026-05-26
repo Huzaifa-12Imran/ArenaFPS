@@ -166,8 +166,7 @@ class Player extends GameObject3D {
         } else if (wep.type === 'knife') {
             // ── Custom Scythe Model (Blockbench JSON) ────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.20, -0.20, -0.60); // Bottom-right viewmodel position
-            G.rotation.y = 0.40; // Turn slightly to the right to face forward
+            G.position.set(0.28, -0.35, -0.25); // Match other weapons' coordinate space
 
             if (!window.loadBlockbenchWeapon) {
                 window.loadBlockbenchWeapon = async (jsonUrl, texUrl) => {
