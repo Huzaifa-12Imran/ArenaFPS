@@ -58,8 +58,17 @@ class RemotePlayer extends GameObject3D {
             model.scale.set(1, 1, 1);
             model.rotation.y = Math.PI;
 
+            this._hiddenBones = [];
+
             // Color every SkinnedMesh; hide any static geometry
             model.traverse(child => {
+                if (child.isBone) {
+                    // Collect hand and foot bones to hide the broken geometry
+                    if (child.name.includes('Hand') || child.name.includes('Foot') || child.name.includes('Toe')) {
+                        this._hiddenBones.push(child);
+                    }
+                }
+                
                 if (child.isSkinnedMesh) {
 
                     child.frustumCulled = false;
@@ -244,6 +253,14 @@ class RemotePlayer extends GameObject3D {
 
         if (this._mixer) {
             this._mixer.update(dt);
+        }
+
+        // Force broken hands/feet bones to scale 0 so they are invisible.
+        // We do this after mixer.update() so the animation doesn't overwrite it.
+        if (this._hiddenBones) {
+            for (const bone of this._hiddenBones) {
+                bone.scale.set(0.001, 0.001, 0.001);
+            }
         }
 
         if (this.weapon) this.weapon.update(dt, this.position, this.rotation);
