@@ -166,7 +166,7 @@ class Player extends GameObject3D {
         } else if (wep.type === 'knife') {
             // ── Custom Scythe Model (Blockbench JSON) ────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.20, -0.22, -0.40); // Bottom-right viewmodel position
+            G.position.set(0.10, -0.25, -0.40); // Bottom-right viewmodel position
 
             if (!window.loadBlockbenchWeapon) {
                 window.loadBlockbenchWeapon = async (jsonUrl, texUrl) => {
@@ -181,7 +181,7 @@ class Player extends GameObject3D {
                         tex.magFilter = THREE.NearestFilter;
                         tex.minFilter = THREE.NearestFilter;
                         if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
-                        const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.1 });
+                        const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.1, roughness: 0.8, metalness: 0.1 });
                         
                         const texW = data.texture_size ? data.texture_size[0] : 16;
                         const texH = data.texture_size ? data.texture_size[1] : 16;
@@ -253,10 +253,12 @@ class Player extends GameObject3D {
             }
 
             window.loadBlockbenchWeapon('Scythe.json', 'scythe.png').then(scytheModel => {
-                // -PI/2 on X flips from Y-up (Blockbench) to Z-forward (Three.js)
-                scytheModel.rotation.x = -Math.PI / 2;  // face forward into scene
-                scytheModel.rotation.y = Math.PI;        // flip so it's not mirrored
-                scytheModel.rotation.z = Math.PI / 5;   // tilt slightly for natural held look
+                // X=-PI/2: convert Y-up blockbench to Z-forward three.js
+                // Z=+PI/2: swing staff from vertical to horizontal (pointing right)
+                // Y=PI: face correctly, not mirrored
+                scytheModel.rotation.x = -Math.PI / 2;
+                scytheModel.rotation.y = Math.PI;
+                scytheModel.rotation.z = Math.PI / 2;   // lay it flat/horizontal
                 G.add(scytheModel);
             });
             
