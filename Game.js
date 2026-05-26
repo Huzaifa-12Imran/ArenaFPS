@@ -230,14 +230,13 @@ class Game {
         document.addEventListener('pointerlockchange', () => {
             this.isLocked = document.pointerLockElement === document.body;
 
-            // When pointer lock is released, the browser swallows keyup events
-            // for any keys held at that moment — clear them all to prevent
-            // the character from sliding indefinitely after pressing ESC.
-            if (!this.isLocked) {
-                this.keys = {};
-                if (this.player) {
-                    this.player.isShooting = false;
-                }
+            // Every time lock state changes, the browser may have swallowed keyup
+            // events. Clear ALL key state on both lock AND unlock to prevent the
+            // character drifting indefinitely (stuck D / W / etc.).
+            this.keys = {};
+            if (this.player) {
+                this.player.keys    = {};
+                this.player.isShooting = false;
             }
 
             // While the shop is open we intentionally have no pointer lock;
