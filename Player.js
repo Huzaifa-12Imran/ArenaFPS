@@ -166,7 +166,7 @@ class Player extends GameObject3D {
         } else if (wep.type === 'knife') {
             // ── Custom Scythe Model (Blockbench JSON) ────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.15, -0.1, -0.35); // Adjusted to fit blockbench scale
+            G.position.set(0.22, -0.30, -0.45); // Bottom-right, far enough from camera
 
             if (!window.loadBlockbenchWeapon) {
                 window.loadBlockbenchWeapon = async (jsonUrl, texUrl) => {
@@ -240,7 +240,7 @@ class Player extends GameObject3D {
                         
                         group.position.set(-8, -8, -8);
                         const outer = new THREE.Group();
-                        outer.scale.set(0.015, 0.015, 0.015);
+                        outer.scale.set(0.006, 0.006, 0.006); // Much smaller scale
                         outer.add(group);
                         
                         window.blockbenchCache[jsonUrl] = outer;
@@ -253,8 +253,10 @@ class Player extends GameObject3D {
             }
 
             window.loadBlockbenchWeapon('Scythe.json', 'scythe.png').then(scytheModel => {
-                scytheModel.rotation.y = Math.PI; // Face the right way
-                scytheModel.rotation.z = -Math.PI / 8; // Angle it slightly
+                // Rotate so the scythe hangs down like a held weapon (blade pointing upper-left)
+                scytheModel.rotation.x = Math.PI / 6;   // tilt toward camera
+                scytheModel.rotation.y = Math.PI;        // face the right direction
+                scytheModel.rotation.z = Math.PI / 6;   // slight counter-clockwise tilt
                 G.add(scytheModel);
             });
             
