@@ -51,7 +51,7 @@ class RemotePlayer extends GameObject3D {
         // be ~1.75m in Three.js world space (scale = 0.01).
         // ─────────────────────────────────────────────────────────────────────
 
-        const SCALE = 0.01;
+        const SCALE = 1.0;
 
         this._skinnedMeshes = [];
 
@@ -59,12 +59,6 @@ class RemotePlayer extends GameObject3D {
             if (node.isSkinnedMesh) {
                 node.frustumCulled = false;
                 node.castShadow = true;
-                // Counter-act the parent model's scale to prevent the 
-                // Three.js vertex shader double-scaling bug.
-                // model is 0.01. mesh becomes 100. World scale of mesh = 1.0.
-                // Bone world scale = 0.01.
-                // Shader: meshWorld (1.0) * boneWorld (0.01) = 0.01. Perfect!
-                node.scale.multiplyScalar(1 / SCALE);
                 this._skinnedMeshes.push(node);
             }
         });
