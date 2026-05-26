@@ -91,11 +91,27 @@ class RemotePlayer extends GameObject3D {
             // Normalize skin weights on all SkinnedMeshes.
             // Babylon GLB exports sometimes have secondary meshes (fingers, toes)
             // with skin weights that don't sum to 1.0, causing vertices to fly out.
+            let masterSkeleton = null;
+            let maxBones = 0;
             model.traverse(node => {
                 if (node.isSkinnedMesh) {
                     node.normalizeSkinWeights();
+                    if (node.skeleton && node.skeleton.bones.length > maxBones) {
+                        maxBones = node.skeleton.bones.length;
+                        masterSkeleton = node.skeleton;
+                    }
                 }
             });
+
+            if (masterSkeleton) {
+                model.traverse(node => {
+                    if (node.isSkinnedMesh && node.skeleton !== masterSkeleton) {
+                        node.skeleton = masterSkeleton;
+                        // Use the original bind matrix
+                        node.bind(masterSkeleton, node.bindMatrix);
+                    }
+                });
+            }
 
             // Name tag
             this._nameTag = this._makeNameTag();
