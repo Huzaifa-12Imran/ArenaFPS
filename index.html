@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+      /* Fortnite-style crosshair: 4 lines with gap */
+      #crosshair {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 26px; height: 26px;
+        pointer-events: none;
+        font-size: 0; color: transparent;
+      }
+      #crosshair::before,
+      #crosshair::after,
+      #crosshair .ch-v1,
+      #crosshair .ch-v2 {
+        content: '';
+        position: absolute;
+        background: rgba(255,255,255,0.92);
+        border-radius: 1px;
+        box-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6);
+      }
+      /* left arm */
+      #crosshair::before { width: 7px; height: 2px; top: 12px; left: 0; }
+      /* right arm */
+      #crosshair::after  { width: 7px; height: 2px; top: 12px; right: 0; }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="hud-bar"></div>
+        <div id="playfield"></div>
+        <div id="ui-layer">
+            <div id="mainMenu">
+                <div id="menuContent">
+                    <h1 id="gameTitle">ARENA<span>FPS</span></h1>
+                    <p id="menuSubtitle">Team Deathmatch</p>
+                    <button id="startBtn">PLAY NOW</button>
+                    <p id="menuControls">WASD Move &bull; Mouse Aim &bull; Click Shoot &bull; R Reload &bull; Q/1/2 Switch &bull; 3/F Knife &bull; Space Jump &bull; Shift Sprint</p>
+                </div>
+            </div>
+
+            <div id="hud" style="display:none;">
+                <div id="scoreboard">
+                    <span id="redScore"  class="red-text">RED: 0</span>
+                    <span id="scoreDiv">vs</span>
+                    <span id="blueScore" class="blue-text">BLUE: 0</span>
+                </div>
+
+                <!-- Crosshair: pure CSS, no text -->
+                <div id="crosshair"></div>
+                <div id="hitMarker" style="display:none;"></div>
+                <div id="killConfirm" style="opacity:0;">ELIMINATED</div>
+                <div id="terminalHint">[ B ] Upgrade Terminal</div>
+
+                <div id="healthBar">
+                    <div id="healthLabel">+</div>
+                    <div id="healthBarOuter">
+                        <div id="healthBarInner"></div>
+                    </div>
+                    <span id="healthText">100</span>
+                </div>
+
+                <div id="armorBar" style="display:none;">
+                    <div id="armorLabel">&#9670;</div>
+                    <div id="armorBarOuter">
+                        <div id="armorBarInner"></div>
+                    </div>
+                    <span id="armorText">0</span>
+                </div>
+
+                <div id="ammoDisplay">
+                    <span id="weaponName">RIFLE</span>
+                    <span id="ammoCount">30 / 120</span>
+                </div>
+
+                <div id="killFeed"></div>
+                <div id="damageOverlay"></div>
+
+                <div id="reloadBar" style="display:none;">
+                    <div id="reloadBarInner"></div>
+                    <span>RELOADING</span>
+                </div>
+
+                <div id="respawnOverlay" style="display:none;">
+                    <p id="respawnText">Respawning in 3...</p>
+                </div>
+
+                <div id="dirHitIndicator"></div>
+            </div>
+
+            <!-- Floating damage numbers layer -->
+            <div id="dmgNumberLayer"></div>
+
+            <div id="shopUI" style="display:none;">
+                <div id="shopHeader">
+                    <h2>&#9654; UPGRADE TERMINAL</h2>
+                    <span id="shopCredits">Credits: $0</span>
+                    <button id="closeShopBtn">[ESC] CLOSE</button>
+                </div>
+                <div id="shopItemsGrid">
+                    <!-- Shop items injected here -->
+                </div>
+            </div>
+
+            <div id="victoryScreen" style="display:none;">
+                <h1 id="victoryTitle">VICTORY!</h1>
+                <p id="victoryTeam"></p>
+                <p id="victoryScore"></p>
+                <button id="restartBtn">PLAY AGAIN</button>
+            </div>
+
+            <div id="solo-badge">Solo &mdash; playing with bots</div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.182.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.182.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+        window.THREE = THREE;
+        window.GLTFLoader = GLTFLoader;
+        window.SkeletonUtils = SkeletonUtils;
+
+        const scripts = [
+            'AudioManager.js',
+            'GameObject3D.js',
+            'ArenaMap.js',
+            'Weapon.js',
+            'Player.js',
+            'RemotePlayer.js',
+            'BotAI.js',
+            'Projectile.js',
+            'Game.js',
+        ];
+
+        for (const src of scripts) {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src + '?v=28';
+                s.onload = resolve;
+                s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+
+        // Preload the character GLB model before starting the game
+        await new Promise((resolve, reject) => {
+            const loader = new GLTFLoader();
+            loader.load('dummy3.glb', (gltf) => {
+                window.characterGLTF = gltf;
+                console.log('[GLB] Character model loaded OK!');
+                console.log('[GLB] Animations:', gltf.animations.map(a=>a.name));
+                console.log('[GLB] SkeletonUtils available:', !!window.SkeletonUtils);
+
+                resolve();
+            }, (xhr) => {
+                console.log('[GLB] Loading...', Math.round(xhr.loaded/xhr.total*100) + '%');
+            }, (err) => {
+                console.error('[GLB] Load FAILED:', err);
+                resolve(); // don't block game start
+            });
+        });
+
+        const game = new Game();
+        window.game = game;
+    </script>
+</body>
+</html>
