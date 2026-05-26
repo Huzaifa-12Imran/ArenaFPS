@@ -164,40 +164,39 @@ class Player extends GameObject3D {
             this.weaponGroup.add(this.muzzleLight);
 
         } else if (wep.type === 'knife') {
-            // ── Classic Bowie Knife ─────────────────────────────────────────────
+            // ── Clean Combat Knife ─────────────────────────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.18, -0.22, -0.15); // slightly more forward and up
+            G.position.set(0.15, -0.20, -0.12); // closer to camera
 
-            const bladeMat  = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.3 });
-            const edgeMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1.0, roughness: 0.1 });
-            const woodMat   = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.9 }); // dark wood handle
-            const guardMat  = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.4 }); // brass/steel guard
+            const bladeMat  = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.95, roughness: 0.1 });
+            const edgeMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1.0, roughness: 0.05 });
+            const handleMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.85 }); 
+            const guardMat  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8, roughness: 0.5 }); 
 
-            // Main blade body (thick and wide)
-            G.add(box(0.016, 0.05, 0.18, bladeMat, 0, 0.025, -0.15));
-            // Blade edge (bottom)
-            G.add(box(0.010, 0.015, 0.18, edgeMat, 0, -0.005, -0.15));
-            
-            // Clip point (angled top cut)
-            const clipG = new THREE.Group();
-            clipG.position.set(0, 0.035, -0.27);
-            clipG.add(box(0.016, 0.03, 0.08, bladeMat, 0, 0, 0));
-            clipG.add(box(0.010, 0.015, 0.08, edgeMat, 0, -0.02, 0));
-            clipG.rotation.x = -0.4;
-            G.add(clipG);
+            // Straight blade
+            G.add(box(0.012, 0.04, 0.20, bladeMat, 0, 0.02, -0.15));
+            // Blade edge
+            G.add(box(0.008, 0.015, 0.20, edgeMat, 0, -0.005, -0.15));
+            // Pointed tip
+            const tipG = new THREE.Group();
+            tipG.position.set(0, 0.02, -0.25);
+            tipG.add(box(0.012, 0.04, 0.08, bladeMat, 0, 0, 0));
+            tipG.add(box(0.008, 0.015, 0.08, edgeMat, 0, -0.025, 0));
+            tipG.rotation.x = -0.25;
+            G.add(tipG);
 
-            // Large crossguard
-            G.add(box(0.022, 0.08, 0.015, guardMat, 0, 0.01, -0.05));
-            // Handle (thick wood)
-            G.add(box(0.026, 0.038, 0.12, woodMat, 0, 0.01, 0.02));
-            // Heavy pommel cap
-            G.add(box(0.03, 0.045, 0.02, guardMat, 0, 0.01, 0.09));
+            // Clean crossguard
+            G.add(box(0.018, 0.065, 0.015, guardMat, 0, 0.01, -0.05));
+            // Straight handle
+            G.add(box(0.022, 0.035, 0.12, handleMat, 0, 0.01, 0.02));
+            // Clean pommel
+            G.add(box(0.024, 0.04, 0.015, guardMat, 0, 0.01, 0.085));
             
             this.weaponGroup.add(G);
 
             // Arm (human)
             const arm = new THREE.Group();
-            arm.position.set(0.18, -0.28, 0.10);
+            arm.position.set(0.15, -0.25, 0.15); // pulled closer to match weapon
             const slvK = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.060, 0.20, 10), armorMat);
             slvK.rotation.x = Math.PI / 2; slvK.position.set(0, 0, -0.10); arm.add(slvK);
             const elbK = new THREE.Mesh(new THREE.SphereGeometry(0.062, 8, 6), armMat);
@@ -214,7 +213,7 @@ class Player extends GameObject3D {
         } else {
             // ── Heavy Pistol (Desert Eagle style) ───────────────────────────────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.20, -0.25, -0.20); // prominent placement
+            G.position.set(0.15, -0.18, -0.10); // pulled much closer and up to show off body and hand
 
             const silverMat = new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 0.85, roughness: 0.25 });
             const blackMat  = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.8 });
@@ -256,7 +255,7 @@ class Player extends GameObject3D {
 
             // ── First-person arm (right) ────────────────────
             const arm = new THREE.Group();
-            arm.position.set(0.20, -0.30, 0.10);
+            arm.position.set(0.15, -0.23, 0.15); // pulled closer to match weapon
             const slvP = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.060, 0.20, 10), armorMat);
             slvP.rotation.x = Math.PI / 2; slvP.position.set(0, 0, -0.10); arm.add(slvP);
             const elbP = new THREE.Mesh(new THREE.SphereGeometry(0.062, 8, 6), armMat);
@@ -269,7 +268,7 @@ class Player extends GameObject3D {
 
             // Muzzle flash light
             this.muzzleLight = new THREE.PointLight(0xffaa33, 0, 6);
-            this.muzzleLight.position.set(0.20, -0.20, -0.40);
+            this.muzzleLight.position.set(0.15, -0.13, -0.30);
             this.weaponGroup.add(this.muzzleLight);
         }
 
