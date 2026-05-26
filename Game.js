@@ -168,6 +168,48 @@ class Game {
             }
         });
 
+        // Settings Menu
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const volSlider = document.getElementById('volSlider');
+        const sensSlider = document.getElementById('sensSlider');
+
+        settingsBtn.addEventListener('click', () => {
+            document.getElementById('menuContent').style.display = 'none';
+            settingsPanel.style.display = 'flex';
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsPanel.style.display = 'none';
+            document.getElementById('menuContent').style.display = 'block';
+        });
+
+        volSlider.addEventListener('input', (e) => {
+            if (this.audio) {
+                this.audio.masterVolume = parseFloat(e.target.value);
+                if (this.audio.listener) {
+                    this.audio.listener.setMasterVolume(this.audio.masterVolume);
+                }
+            }
+        });
+
+        sensSlider.addEventListener('input', (e) => {
+            if (this.player) {
+                this.player.sensitivity = parseFloat(e.target.value) * 0.002;
+            } else {
+                // Store globally until player is created
+                window.gameMouseSensitivity = parseFloat(e.target.value) * 0.002;
+            }
+        });
+
+        // Shop / Loadout from Main Menu
+        const loadoutBtn = document.getElementById('loadoutBtn');
+        loadoutBtn.addEventListener('click', () => {
+            // Re-use the existing toggleShop logic but ensure it overlays the main menu
+            this.toggleShop();
+        });
+
         const restartBtn = document.getElementById('restartBtn');
         restartBtn.addEventListener('click', () => {
             this.restartMatch();
@@ -289,6 +331,7 @@ class Game {
 
             // Create local player
             this.player = new Player(this.scene, this.camera, this.myPlayerIndex, myTeam);
+            this._applyUpgradesToPlayer();
             const spawnPos = this.arenaMap.getSpawn(myTeam);
             this.player.position.copy(spawnPos);
             this.camera.position.copy(spawnPos);
@@ -394,12 +437,30 @@ class Game {
             console.warn('Multiplayer connection failed, running offline:', e);
             // Create local player anyway
             this.player = new Player(this.scene, this.camera, 0, 'red');
+            this._applyUpgradesToPlayer();
             const spawnPos = this.arenaMap.getSpawn('red');
             this.player.position.copy(spawnPos);
             this.camera.position.copy(spawnPos);
             this.entities.push(this.player);
             this.spawnBots();
         }
+    }
+
+    _applyUpgradesToPlayer() {
+        if (!this.player) return;
+        // Apply sensitivity from settings menu
+        if (window.gameMouseSensitivity) {
+            this.player.sensitivity = window.gameMouseSensitivity;
+        }
+        // Apply purchased items
+        this.shopItems.forEach(item => {
+            if (this.purchasedItems.includes(item.id)) {
+                if (item.effect === 'speed') this.player.moveSpeed *= item.value;
+                if (item.effect === 'ammo') {
+                    this.player.weapons.forEach(w => w.reserveAmmo += item.value);
+                }
+            }
+        });
     }
 
     spawnBots() {
@@ -801,7 +862,7 @@ class Game {
                     ${players.map(p => `
                         <tr>
                             <td style="padding: 5px; color: ${p.team === 'red' ? '#ff6666' : '#66aaff'}">${p.name}</td>
-                            <td style="padding: 5px; text-align: right;">${p.kills}</td>
+                            <td style="padding: 5px; text-align: right; color: #fff;">${p.kills}</td>
                             <td style="padding: 5px; text-align: right; color: #888;">${p.deaths}</td>
                         </tr>
                     `).join('')}
@@ -939,41 +1000,43 @@ class Game {
     }
 
     toggleShop() {
-        if (!this.player || this.player.isDead) return;
+        // Allow opening shop from main menu before game starts
+        if (this.matchStarted && (!this.player || this.player.isDead)) return;
 
         const shopUI = document.getElementById('shopUI');
         
         if (shopUI.style.display === 'flex') {
-            // Close shop — hide cursor immediately via CSS; pointer lock is
-            // still active (we never released it), so the next mousemove will
-            // just work. No requestPointerLock() dance needed.
             shopUI.style.display = 'none';
             this.shopOpen = false;
-            document.body.style.cursor = 'none';
+            // Only hide cursor if we are actually in-game
+            if (this.matchStarted) {
+                document.body.style.cursor = 'none';
+            }
             return;
         }
 
-        // Option C: Check distance to nearest buy pillar
-        let nearPillar = false;
-        if (this.arenaMap && this.arenaMap.buyPillars) {
-            for (const p of this.arenaMap.buyPillars) {
-                const dist = Math.hypot(p.x - this.player.position.x, p.z - this.player.position.z);
-                if (dist <= 5.0) { // 5 meter interaction radius
-                    nearPillar = true;
-                    break;
+        // Only enforce proximity to pillar if game is actually running
+        if (this.matchStarted) {
+            let nearPillar = false;
+            if (this.arenaMap && this.arenaMap.buyPillars) {
+                for (const p of this.arenaMap.buyPillars) {
+                    const dist = Math.hypot(p.x - this.player.position.x, p.z - this.player.position.z);
+                    if (dist <= 5.0) { // 5 meter interaction radius
+                        nearPillar = true;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (!nearPillar) {
-            // Show a HUD hint rather than spamming the kill feed
-            const hint = document.getElementById('terminalHint');
-            if (hint) {
-                hint.style.opacity = '1';
-                clearTimeout(this._hintTimer);
-                this._hintTimer = setTimeout(() => { hint.style.opacity = '0'; }, 2000);
+            if (!nearPillar) {
+                const hint = document.getElementById('terminalHint');
+                if (hint) {
+                    hint.style.opacity = '1';
+                    clearTimeout(this._hintTimer);
+                    this._hintTimer = setTimeout(() => { hint.style.opacity = '0'; }, 2000);
+                }
+                return;
             }
-            return;
         }
 
         // Open shop — keep pointer lock active; just show the cursor via CSS
@@ -1069,11 +1132,11 @@ class Game {
             case 'speed':
                 if (!this.purchasedItems.includes('speed')) {
                     this.purchasedItems.push('speed');
-                    this.player.moveSpeed *= item.value;
+                    if (this.player) this.player.moveSpeed *= item.value;
                 }
                 break;
             case 'ammo':
-                this.player.weapons.forEach(w => w.reserveAmmo += item.value);
+                if (this.player) this.player.weapons.forEach(w => w.reserveAmmo += item.value);
                 break;
         }
 

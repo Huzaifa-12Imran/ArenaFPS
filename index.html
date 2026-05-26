@@ -42,8 +42,27 @@
                 <div id="menuContent">
                     <h1 id="gameTitle">ARENA<span>FPS</span></h1>
                     <p id="menuSubtitle">Team Deathmatch</p>
-                    <button id="startBtn">PLAY NOW</button>
+                    <div style="display: flex; flex-direction: column; gap: 16px; align-items: center; margin-bottom: 2.5em;">
+                        <button id="startBtn">PLAY NOW</button>
+                        <button id="loadoutBtn" class="menu-secondary-btn">UPGRADE TERMINAL</button>
+                        <button id="settingsBtn" class="menu-secondary-btn">SETTINGS</button>
+                    </div>
                     <p id="menuControls">WASD Move &bull; Mouse Aim &bull; Click Shoot &bull; R Reload &bull; Q/1/2 Switch &bull; 3/F Knife &bull; Space Jump &bull; Shift Sprint</p>
+                </div>
+
+                <div id="settingsPanel" style="display:none; position:absolute; inset:0; background:rgba(10,14,30,0.95); z-index:10; flex-direction:column; align-items:center; justify-content:center;">
+                    <h2 style="font-family:'Barlow Condensed', sans-serif; font-size:3rem; color:#00C8FF; margin-bottom:30px;">SETTINGS</h2>
+                    <div style="width: 350px; display:flex; flex-direction:column; gap:25px; font-family:'Rajdhani', sans-serif; color:#fff; font-size:1.3rem;">
+                        <label style="display:flex; justify-content:space-between; align-items:center;">
+                            Master Volume
+                            <input type="range" id="volSlider" min="0" max="1" step="0.1" value="0.5" style="width:160px; cursor:pointer;">
+                        </label>
+                        <label style="display:flex; justify-content:space-between; align-items:center;">
+                            Mouse Sensitivity
+                            <input type="range" id="sensSlider" min="0.1" max="5" step="0.1" value="1.0" style="width:160px; cursor:pointer;">
+                        </label>
+                    </div>
+                    <button id="closeSettingsBtn" class="menu-secondary-btn" style="margin-top:50px;">BACK TO MENU</button>
                 </div>
             </div>
 
@@ -155,7 +174,7 @@
         for (const src of scripts) {
             await new Promise((resolve, reject) => {
                 const s = document.createElement('script');
-                s.src = src + '?v=47';
+                s.src = src + '?v=48';
                 s.onload = resolve;
                 s.onerror = reject;
                 document.head.appendChild(s);

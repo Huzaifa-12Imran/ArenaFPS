@@ -171,6 +171,33 @@ body, html {
     0 4px 15px rgba(255,184,0,0.4);
 }
 
+.menu-secondary-btn {
+  position: relative;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 12px 40px;
+  cursor: pointer;
+  width: 320px;
+  transition: all 0.2s;
+}
+.menu-secondary-btn:hover {
+  background: rgba(0, 200, 255, 0.15);
+  border-color: var(--fn-blue);
+  color: var(--fn-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 200, 255, 0.2);
+}
+.menu-secondary-btn:active {
+  transform: translateY(2px);
+}
+
 #menuControls {
   margin-top: 2.5em;
   color: rgba(255,255,255,0.35);
