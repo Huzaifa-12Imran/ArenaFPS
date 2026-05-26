@@ -166,58 +166,44 @@ class Player extends GameObject3D {
         } else if (wep.type === 'knife') {
             // ── Grim Reaper Scythe ─────────────────────────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.12, -0.15, -0.35); // Pushed back to prevent clipping
+            G.position.set(0.18, -0.25, -0.35); // Safe distance from camera
 
             const handleMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.9 }); // wood
             const bladeMat  = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.9, roughness: 0.2 });
-            const edgeMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1.0, roughness: 0.05 });
             const wrapMat   = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.95 }); // leather wrap
 
             // Long wooden staff
-            G.add(cyl(0.015, 0.015, 0.8, 8, handleMat, 0, -0.2, 0, Math.PI/12));
+            G.add(cyl(0.015, 0.015, 1.2, 8, handleMat, 0, -0.1, 0, Math.PI/10));
             
             // Leather wrap at grip
-            G.add(cyl(0.017, 0.017, 0.15, 8, wrapMat, 0, -0.05, 0, Math.PI/12));
+            G.add(cyl(0.017, 0.017, 0.2, 8, wrapMat, 0, -0.05, 0, Math.PI/10));
 
-            // Scythe Blade Base (horizontal attachment)
-            G.add(box(0.02, 0.04, 0.06, bladeMat, -0.02, 0.15, 0.02));
+            // Scythe Blade Base Bracket
+            G.add(box(0.03, 0.05, 0.06, handleMat, -0.02, 0.40, 0.06));
 
-            // Scythe Curved Blade
-            const bladeG = new THREE.Group();
-            bladeG.position.set(-0.02, 0.15, -0.02);
+            // Beautiful Extruded Scythe Blade
+            const shape = new THREE.Shape();
+            shape.moveTo(0, 0); // attachment point
+            // Outer curve: sweeping left and FORWARD (-Y in shape -> -Z in 3D)
+            shape.quadraticCurveTo(-0.25, -0.25, -0.5, -0.4); 
+            // Inner curve: hooking back towards attachment
+            shape.quadraticCurveTo(-0.15, -0.15, 0, -0.06); 
             
-            // Main curved segment
-            const b1 = box(0.008, 0.04, 0.25, bladeMat, 0, 0, -0.12);
-            b1.rotation.y = -0.3; // Curve left/inwards
-            bladeG.add(b1);
+            const extrudeSettings = { depth: 0.006, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.003, bevelThickness: 0.002 };
+            const bladeGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            const bladeMesh = new THREE.Mesh(bladeGeom, bladeMat);
             
-            // Blade edge 1
-            const e1 = box(0.004, 0.015, 0.25, edgeMat, 0, -0.02, -0.12);
-            e1.rotation.y = -0.3;
-            bladeG.add(e1);
-
-            // Tip segment
-            const b2 = box(0.008, 0.03, 0.20, bladeMat, -0.09, 0, -0.32);
-            b2.rotation.y = -0.8;
-            bladeG.add(b2);
+            // Lay flat in XZ plane
+            bladeMesh.rotation.x = Math.PI / 2; 
+            bladeMesh.position.set(-0.02, 0.40, 0.06); 
             
-            // Blade edge 2
-            const e2 = box(0.004, 0.015, 0.20, edgeMat, -0.09, -0.01, -0.32);
-            e2.rotation.y = -0.8;
-            bladeG.add(e2);
-            
-            // Sharp tip
-            const b3 = box(0.006, 0.02, 0.10, bladeMat, -0.22, 0, -0.42);
-            b3.rotation.y = -1.2;
-            bladeG.add(b3);
-
-            G.add(bladeG);
+            G.add(bladeMesh);
             
             this.weaponGroup.add(G);
 
             // Arm (human)
             const arm = new THREE.Group();
-            arm.position.set(0.12, -0.30, -0.05); // Pulled back to match weapon position
+            arm.position.set(0.18, -0.35, -0.05); // Pulled back to match weapon position
             const slvK = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.060, 0.20, 10), armorMat);
             slvK.rotation.x = Math.PI / 2; slvK.position.set(0, 0, -0.10); arm.add(slvK);
             const elbK = new THREE.Mesh(new THREE.SphereGeometry(0.062, 8, 6), armMat);
