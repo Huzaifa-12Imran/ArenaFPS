@@ -103,6 +103,19 @@ class RemotePlayer extends GameObject3D {
             this.mesh.add(ring);
             // AnimationMixer on the fresh model — clips are also from this fresh gltf,
             // so bone track paths resolve correctly with no cross-scene ambiguity.
+            // CRITICAL FIX: Mixamo animations include position data for EVERY bone.
+            // If the animation rig has different proportions than dummy3, these position
+            // tracks rip the limbs apart, causing hands and feet to float away from wrists.
+            // We must delete all position tracks EXCEPT the root 'Hips' bone.
+            gltf.animations.forEach(clip => {
+                clip.tracks = clip.tracks.filter(track => {
+                    const isPositionTrack = track.name.endsWith('.position');
+                    const isHips = track.name.includes('Hips');
+                    // Keep track if it's NOT a position track, OR if it's the Hips position track
+                    return !isPositionTrack || isHips;
+                });
+            });
+
             this._mixer   = new THREE.AnimationMixer(model);
             this._actions = {};
             for (const clip of gltf.animations) {
