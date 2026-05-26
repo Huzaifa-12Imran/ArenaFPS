@@ -13,12 +13,12 @@ class BotAI extends RemotePlayer {
         this.patrolTarget = new THREE.Vector3();
         this.coverTarget = null;
         this.shootCooldown = 0;
-        this.reactionTime = 0.3 + Math.random() * 0.4;
+        this.reactionTime = 0.1 + Math.random() * 0.2;
         this.reactionTimer = 0;
-        this.accuracy = 0.4 + Math.random() * 0.3;
-        this.sightRange = 35;
-        this.attackRange = 25;
-        this.moveSpeed = 6;
+        this.accuracy = 0.65 + Math.random() * 0.35;
+        this.sightRange = 50;
+        this.attackRange = 40;
+        this.moveSpeed = 7.5;
         this.lastSeenEnemyPos = null;
         this.strafeDir = Math.random() > 0.5 ? 1 : -1;
         this.strafeTimer = 0;
@@ -236,12 +236,12 @@ class BotAI extends RemotePlayer {
             window.game.performBotHitscan(this, eyePos, dir);
         }
 
-        this.shootCooldown = 0.12 + Math.random() * 0.08;
+        this.shootCooldown = 0.08 + Math.random() * 0.05;
 
         // Burst fire then pause
-        if (this.burstCount >= 3 + Math.floor(Math.random() * 4)) {
+        if (this.burstCount >= 5 + Math.floor(Math.random() * 5)) {
             this.burstCount = 0;
-            this.burstCooldown = 0.5 + Math.random() * 0.5;
+            this.burstCooldown = 0.2 + Math.random() * 0.3;
         }
     }
 
