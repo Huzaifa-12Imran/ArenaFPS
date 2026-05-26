@@ -88,6 +88,22 @@ class RemotePlayer extends GameObject3D {
             this.mesh.add(model);
             this._model = model;
 
+            // CRITICAL FIX for exploding hands/feet:
+            // After positioning the model group (y=-1.5), the world matrices of all
+            // SkinnedMesh nodes have changed. But their baked bindMatrices still encode
+            // the OLD world position from the Babylon export. This mismatch causes
+            // secondary meshes (hands, feet, fingers) to render at wrong positions.
+            // 
+            // Fix: force a full matrix update, then rebind each SkinnedMesh to its
+            // CURRENT world matrix. This recalculates bindMatrix and bindMatrixInverse
+            // so the vertex shader uses the correct reference frame.
+            this.mesh.updateMatrixWorld(true);
+            model.traverse(node => {
+                if (node.isSkinnedMesh && node.skeleton) {
+                    node.bind(node.skeleton, node.matrixWorld);
+                }
+            });
+
             // Name tag
             this._nameTag = this._makeNameTag();
             this._nameTag.scale.set(1.5, 0.375, 1);
