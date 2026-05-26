@@ -52,25 +52,23 @@ class RemotePlayer extends GameObject3D {
         loader.load('dummy3.glb', (gltf) => {
             const model = gltf.scene;
 
-            // The GLTFLoader already outputs the scene in meters.
-            // No scaling needed — the model is ~1.7 m tall at scale 1.0.
-            model.scale.set(1, 1, 1);
+            // Recalculate inverses BEFORE moving the model to avoid baking offsets
+            model.updateMatrixWorld(true);
+            model.traverse(child => {
+                if (child.isSkinnedMesh) {
+                    child.skeleton.calculateInverses();
+                }
+            });
 
             // The entity's physics position is the capsule centre (Y ≈ 1.5 m).
             // Offset the mesh down so feet sit on the floor at world Y = 0.
+            model.scale.set(1, 1, 1);
             model.position.y = -1.5;
             model.rotation.y = Math.PI;
 
-            // Color every SkinnedMesh; hide any static geometry or corrupted joints
+            // Color every SkinnedMesh; hide any static geometry
             model.traverse(child => {
                 if (child.isSkinnedMesh) {
-                    // Babylon export bug: The 'Joints' mesh (spheres for fingers/knees) 
-                    // has corrupted skinning indices in Three.js, causing the shards.
-                    // We simply hide it. The main body looks perfect without it.
-                    if (child.name.includes('Joints')) {
-                        child.visible = false;
-                        return;
-                    }
 
                     child.frustumCulled = false;
                     child.castShadow    = true;
