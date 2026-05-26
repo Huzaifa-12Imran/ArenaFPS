@@ -174,28 +174,37 @@ body, html {
 .menu-secondary-btn {
   position: relative;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: clamp(1rem, 1.5vw, 1.3rem);
-  font-weight: 700;
+  font-size: clamp(1rem, 1.5vw, 1.4rem);
+  font-weight: 900;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: #000;
+  background: linear-gradient(180deg, #4DE3FF 0%, #00B8FF 60%, #008CFF 100%);
+  border: none;
   border-radius: var(--radius);
-  padding: 12px 40px;
+  padding: 14px 40px;
   cursor: pointer;
   width: 320px;
-  transition: all 0.2s;
+  box-shadow:
+    0 0 0 3px #000,
+    0 6px 0 3px #000,
+    0 10px 30px rgba(0,200,255,0.5);
+  transform: translateY(0);
+  transition: transform 0.1s, box-shadow 0.1s;
 }
 .menu-secondary-btn:hover {
-  background: rgba(0, 200, 255, 0.15);
-  border-color: var(--fn-blue);
-  color: var(--fn-blue);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 200, 255, 0.2);
+  box-shadow:
+    0 0 0 3px #000,
+    0 8px 0 3px #000,
+    0 16px 40px rgba(0,200,255,0.7);
 }
 .menu-secondary-btn:active {
-  transform: translateY(2px);
+  transform: translateY(4px);
+  box-shadow:
+    0 0 0 3px #000,
+    0 2px 0 3px #000,
+    0 4px 15px rgba(0,200,255,0.4);
 }
 
 #menuControls {
@@ -655,8 +664,70 @@ body, html {
   font-family: 'Rajdhani', sans-serif;
   font-size: 1.3rem;
   color: rgba(255,255,255,0.55);
-  margin: 0 0 2.5em;
+  margin: 0 0 1.5em;
   letter-spacing: 0.1em;
+}
+
+#matchLeaderboard {
+  margin-top: 10px;
+  width: 100%;
+  max-width: 450px;
+  background: var(--fn-panel);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  padding: 0;
+  box-shadow:
+    0 0 0 1px #000,
+    0 4px 20px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+.fn-leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.08em;
+}
+
+.fn-leaderboard-table thead {
+  background: rgba(255,255,255,0.05);
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+}
+
+.fn-leaderboard-table th {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  padding: 10px 5px;
+}
+
+.fn-leaderboard-table td {
+  padding: 8px 5px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.fn-leaderboard-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.fn-leaderboard-table tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.lb-red {
+  color: #FF4C4C;
+  text-shadow: 0 0 12px rgba(255,60,60,0.7);
+}
+
+.lb-blue {
+  color: #4CC8FF;
+  text-shadow: 0 0 12px rgba(76,200,255,0.7);
+}
+
+.lb-stat {
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.9);
 }
 
 #restartBtn {

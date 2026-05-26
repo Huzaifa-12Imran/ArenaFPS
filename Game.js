@@ -850,20 +850,20 @@ class Game {
         });
         
         const lbHtml = `
-            <table style="width: 100%; border-collapse: collapse; font-family: 'Share Tech Mono', monospace; font-size: 16px;">
+            <table class="fn-leaderboard-table">
                 <thead>
-                    <tr style="border-bottom: 1px solid #555; text-align: left;">
-                        <th style="padding: 5px; color: #aaa;">PLAYER</th>
-                        <th style="padding: 5px; color: #aaa; text-align: right;">K</th>
-                        <th style="padding: 5px; color: #aaa; text-align: right;">D</th>
+                    <tr>
+                        <th style="text-align: left; padding-left: 10px;">PLAYER</th>
+                        <th style="text-align: right; width: 60px;">K</th>
+                        <th style="text-align: right; width: 60px; padding-right: 10px;">D</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${players.map(p => `
                         <tr>
-                            <td style="padding: 5px; color: ${p.team === 'red' ? '#ff6666' : '#66aaff'}">${p.name}</td>
-                            <td style="padding: 5px; text-align: right; color: #fff;">${p.kills}</td>
-                            <td style="padding: 5px; text-align: right; color: #888;">${p.deaths}</td>
+                            <td class="${p.team === 'red' ? 'lb-red' : 'lb-blue'}" style="text-align: left; padding-left: 10px;">${p.name.toUpperCase()}</td>
+                            <td class="lb-stat" style="text-align: right; color: #fff;">${p.kills}</td>
+                            <td class="lb-stat" style="text-align: right; color: #aaa; padding-right: 10px;">${p.deaths}</td>
                         </tr>
                     `).join('')}
                 </tbody>
