@@ -215,6 +215,18 @@ class Game {
             this.restartMatch();
         });
 
+        // In-game ≡ MENU button — exits match and returns to main menu
+        const menuBtn = document.getElementById('menuBtn');
+        menuBtn.addEventListener('click', () => {
+            this.goToMainMenu();
+        });
+
+        // Victory screen → Main Menu button
+        const mainMenuBtn = document.getElementById('mainMenuBtn');
+        mainMenuBtn.addEventListener('click', () => {
+            this.goToMainMenu();
+        });
+
         document.addEventListener('pointerlockchange', () => {
             this.isLocked = document.pointerLockElement === document.body;
             // While the shop is open we intentionally have no pointer lock;
@@ -934,6 +946,51 @@ class Game {
             // Fallback: try directly (may silently fail in some browsers)
             try { document.body.requestPointerLock(); } catch(e2) {}
         }
+    }
+
+    goToMainMenu() {
+        // Stop the match
+        this.isRunning = false;
+        this.gameOver = false;
+        this.matchStarted = false;
+        this.redScore = 0;
+        this.blueScore = 0;
+
+        // Hide all in-game UI panels
+        document.getElementById('hud').style.display          = 'none';
+        document.getElementById('victoryScreen').style.display = 'none';
+        if (this.shopOpen) this.toggleShop();
+
+        // Show the main menu
+        document.getElementById('mainMenu').style.display      = 'flex';
+        document.getElementById('menuContent').style.display   = 'block';
+
+        // Release pointer lock so mouse is usable again
+        try { document.exitPointerLock(); } catch(e) {}
+        document.body.style.cursor = 'default';
+
+        // Reset player & bots so a fresh match starts properly
+        if (this.player) {
+            this.player.health = 100;
+            this.player.isDead  = false;
+            this.player.kills   = 0;
+            this.player.deaths  = 0;
+        }
+        for (const bot of this.bots) {
+            bot.health  = 100;
+            bot.isDead  = false;
+            bot.kills   = 0;
+            bot.deaths  = 0;
+            bot.aiState = 'patrol';
+        }
+
+        // Clear dangling projectiles
+        for (const p of this.projectiles) {
+            const idx = this.entities.indexOf(p);
+            if (idx !== -1) this.entities.splice(idx, 1);
+            p.destroy();
+        }
+        this.projectiles = [];
     }
 
 

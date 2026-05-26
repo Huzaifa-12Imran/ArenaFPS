@@ -78,6 +78,7 @@
                 <div id="hitMarker" style="display:none;"></div>
                 <div id="killConfirm" style="opacity:0;">ELIMINATED</div>
                 <div id="terminalHint">[ B ] Upgrade Terminal</div>
+                <button id="menuBtn">&#9776; MENU</button>
 
                 <div id="healthBar">
                     <div id="healthLabel">+</div>
@@ -137,6 +138,7 @@
                     <!-- Leaderboard populated via Game.js -->
                 </div>
                 <button id="restartBtn" style="margin-top: 20px;">PLAY AGAIN</button>
+                <button id="mainMenuBtn" class="menu-secondary-btn" style="margin-top: 10px;">MAIN MENU</button>
             </div>
 
             <div id="solo-badge">Solo &mdash; playing with bots</div>
@@ -174,7 +176,7 @@
         for (const src of scripts) {
             await new Promise((resolve, reject) => {
                 const s = document.createElement('script');
-                s.src = src + '?v=54';
+                s.src = src + '?v=55';
                 s.onload = resolve;
                 s.onerror = reject;
                 document.head.appendChild(s);
