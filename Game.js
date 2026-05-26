@@ -254,8 +254,10 @@ class Game {
 
         // Click to re-lock if game is running
         this.renderer.domElement.addEventListener('click', () => {
-            if (this.matchStarted && !this.isLocked && !this.gameOver && !this.pointerLockBlocked) {
+            if (this.matchStarted && !this.isLocked && !this.gameOver) {
                 try {
+                    // Reset the block flag when the user explicitly clicks to try again
+                    this.pointerLockBlocked = false;
                     document.body.requestPointerLock();
                 } catch (e) {
                     console.warn("re-lock request failed:", e);
