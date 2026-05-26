@@ -53,8 +53,6 @@ class RemotePlayer extends GameObject3D {
                 if (node.isSkinnedMesh) {
                     node.frustumCulled = false;
                     node.castShadow = true;
-                    // Cancel double-scaling bug since we scale the model group below
-                    node.scale.multiplyScalar(1 / SCALE);
                 }
             });
 
