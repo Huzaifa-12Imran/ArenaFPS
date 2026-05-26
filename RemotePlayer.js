@@ -47,7 +47,8 @@ class RemotePlayer extends GameObject3D {
         // The browser caches the GLB after the first load, so every subsequent
         // call is instant (no extra network traffic).
         // ─────────────────────────────────────────────────────────────────────
-        const loader = new THREE.GLTFLoader();
+        // GLTFLoader is a global addon — NOT THREE.GLTFLoader.
+        const loader = new GLTFLoader();
         loader.load('dummy3.glb', (gltf) => {
             const model = gltf.scene;
 
@@ -87,6 +88,21 @@ class RemotePlayer extends GameObject3D {
             this.mesh.add(model);
             this._model = model;
 
+            // Name tag
+            this._nameTag = this._makeNameTag();
+            this._nameTag.scale.set(1.5, 0.375, 1);
+            this._nameTag.position.set(0, 0.5, 0);
+            this.mesh.add(this._nameTag);
+
+            // Ground ring
+            const ringGeo = new THREE.RingGeometry(0.50, 0.62, 24);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: teamHex, side: THREE.DoubleSide, transparent: true, opacity: 0.8
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = -1.48;
+            this.mesh.add(ring);
             // AnimationMixer on the fresh model — clips are also from this fresh gltf,
             // so bone track paths resolve correctly with no cross-scene ambiguity.
             this._mixer   = new THREE.AnimationMixer(model);
