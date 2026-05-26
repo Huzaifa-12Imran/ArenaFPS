@@ -105,87 +105,62 @@ class Player extends GameObject3D {
         };
 
         if (wep.type === 'rifle') {
-            // ── Tactical Assault Rifle ──────────────────────────────────────────
+            // ── Assault Rifle ────────────────────────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.22, -0.28, -0.15);
+            G.position.set(0.22, -0.26, -0.18);
 
-            // Lower receiver
-            G.add(box(0.045, 0.08, 0.22, metalMat, 0, 0, 0));
-            // Upper receiver
-            G.add(box(0.05, 0.05, 0.26, darkMat, 0, 0.065, -0.02));
+            // Receiver body
+            G.add(box(0.055, 0.085, 0.38, metalMat,  0,      0,      0     ));
             // Top rail
-            G.add(box(0.038, 0.015, 0.40, accentMat, 0, 0.095, -0.05));
-            // Holo sight
-            const sightG = new THREE.Group();
-            sightG.position.set(0, 0.115, 0.05);
-            sightG.add(box(0.04, 0.03, 0.05, metalMat, 0, 0, 0)); // base
-            sightG.add(box(0.005, 0.04, 0.04, accentMat, -0.018, 0.035, 0)); // left frame
-            sightG.add(box(0.005, 0.04, 0.04, accentMat, 0.018, 0.035, 0)); // right frame
-            sightG.add(box(0.036, 0.005, 0.04, accentMat, 0, 0.053, 0)); // top frame
-            // Glass
-            const glassMat = new THREE.MeshStandardMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.4, emissive: 0x005544 });
-            sightG.add(box(0.031, 0.031, 0.005, glassMat, 0, 0.035, 0));
-            G.add(sightG);
-
-            // Handguard (octagonal approximation)
-            G.add(box(0.048, 0.06, 0.28, darkMat, 0, 0.04, -0.28));
-            G.add(box(0.055, 0.04, 0.28, darkMat, 0, 0.04, -0.28));
-            // Handguard vents
-            G.add(box(0.005, 0.02, 0.24, accentMat, -0.028, 0.04, -0.28));
-            G.add(box(0.005, 0.02, 0.24, accentMat, 0.028, 0.04, -0.28));
-            
-            // Angled foregrip
-            G.add(box(0.025, 0.06, 0.05, darkMat, 0, -0.01, -0.32));
-            G.add(box(0.025, 0.02, 0.06, accentMat, 0, -0.045, -0.35));
-
+            G.add(box(0.038, 0.018, 0.44, accentMat,  0,      0.053, -0.03 ));
+            // Handguard (slimmer, longer)
+            G.add(box(0.048, 0.07,  0.26, darkMat,    0,      0.005, -0.30 ));
+            // Handguard vents (sides)
+            G.add(box(0.005, 0.04,  0.20, accentMat, -0.027,  0.005, -0.30 ));
+            G.add(box(0.005, 0.04,  0.20, accentMat,  0.027,  0.005, -0.30 ));
             // Barrel
-            G.add(cyl(0.012, 0.014, 0.45, 8, metalMat, 0, 0.055, -0.50, Math.PI/2));
-            // Suppressor / Muzzle brake
-            G.add(cyl(0.022, 0.022, 0.12, 12, accentMat, 0, 0.055, -0.75, Math.PI/2));
-
-            // Magazine (curved)
-            const magG = new THREE.Group();
-            magG.position.set(0, -0.10, -0.05);
-            magG.add(box(0.035, 0.12, 0.06, gripMat, 0, 0, 0));
-            magG.add(box(0.035, 0.08, 0.06, gripMat, 0, -0.09, 0.015));
-            magG.rotation.x = -0.15;
-            G.add(magG);
-
+            G.add(cyl(0.016, 0.016, 0.38, 8, metalMat, 0, 0.025, -0.56, Math.PI/2));
+            // Muzzle brake
+            G.add(cyl(0.024, 0.024, 0.05, 8, accentMat, 0, 0.025, -0.76, Math.PI/2));
+            // Charging handle
+            G.add(box(0.012, 0.02,  0.04, accentMat,  0.034, 0.025,  0.04 ));
+            // Magazine
+            G.add(box(0.038, 0.15,  0.055, gripMat,   0,     -0.115, -0.01 ));
+            // Magwell curve hint
+            G.add(box(0.038, 0.03,  0.055, darkMat,   0,     -0.042, -0.01 ));
             // Pistol grip
-            const gripG = new THREE.Group();
-            gripG.position.set(0, -0.08, 0.12);
-            gripG.add(box(0.036, 0.13, 0.055, gripMat, 0, 0, 0));
-            gripG.rotation.x = 0.2;
-            G.add(gripG);
-
-            // Stock
-            G.add(cyl(0.015, 0.015, 0.20, 8, metalMat, 0, 0.04, 0.20, Math.PI/2)); // buffer tube
-            G.add(box(0.045, 0.10, 0.12, darkMat, 0, 0.02, 0.30)); // stock body
-            G.add(box(0.045, 0.04, 0.10, accentMat, 0, 0.09, 0.31)); // cheek rest
-            G.add(box(0.04, 0.12, 0.02, gripMat, 0, 0.01, 0.37)); // butt pad
+            G.add(box(0.038, 0.12,  0.048, gripMat,   0,     -0.115,  0.10 ));
+            // Stock body
+            G.add(box(0.044, 0.065, 0.20,  darkMat,   0,     -0.008,  0.27 ));
+            // Stock cheekpiece
+            G.add(box(0.044, 0.045, 0.10,  accentMat, 0,      0.025,  0.31 ));
+            // Front sight post
+            G.add(box(0.007, 0.03,  0.007, accentMat, 0,      0.072, -0.43 ));
+            // Rear sight
+            G.add(box(0.028, 0.022, 0.012, accentMat, 0,      0.068,  0.01 ));
 
             this.weaponGroup.add(G);
 
-            // ── First-person arm (right) ────────────────────
+            // ── First-person arm (right) — human skin ────────────────────
             const arm = new THREE.Group();
             arm.position.set(0.22, -0.30, 0.10);
+            // Sleeve (shirt colour, upper arm)
             const slvM = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.060, 0.22, 10), armorMat);
             slvM.rotation.x = Math.PI / 2; slvM.position.set(0, 0, -0.11); arm.add(slvM);
+            // Elbow skin bump
             const elbM = new THREE.Mesh(new THREE.SphereGeometry(0.062, 8, 6), armMat);
             elbM.position.set(0, 0, -0.23); arm.add(elbM);
+            // Forearm (skin)
             const foreM = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.050, 0.24, 10), armMat);
             foreM.rotation.x = Math.PI / 2; foreM.position.set(0, 0, -0.35); arm.add(foreM);
+            // Hand
             const handM = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.075, 0.09), armMat);
             handM.position.set(0, -0.008, -0.49); arm.add(handM);
-            // Left hand holding foregrip
-            const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), armMat);
-            leftHand.position.set(-0.15, -0.05, -0.45);
-            arm.add(leftHand);
             this.weaponGroup.add(arm);
 
             // Muzzle flash light at barrel tip
             this.muzzleLight = new THREE.PointLight(0xffaa33, 0, 8);
-            this.muzzleLight.position.set(0.22, -0.225, -0.90);
+            this.muzzleLight.position.set(0.22, -0.235, -0.78);
             this.weaponGroup.add(this.muzzleLight);
 
         } else if (wep.type === 'knife') {
