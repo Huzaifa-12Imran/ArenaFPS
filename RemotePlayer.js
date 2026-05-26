@@ -31,7 +31,7 @@ class RemotePlayer extends GameObject3D {
     }
 
     _buildModel() {
-        if (!window.characterGLTF) {
+        if (!window.characterGLTF || !window.SkeletonUtils) {
             this._buildFallback();
             return;
         }
@@ -39,31 +39,38 @@ class RemotePlayer extends GameObject3D {
         const isRed = this.team === 'red';
         const teamHex = isRed ? 0xcc2222 : 0x2255cc;
 
-        // Bypassing SkeletonUtils completely!
-        // We load a pristine fresh clone of the GLB directly for each player.
-        // This guarantees 100% correct bone mapping for detached hands/feet.
-        const loader = new THREE.GLTFLoader();
-        loader.load('dummy3.glb', (gltf) => {
-            const model = gltf.scene;
+        // Clone the model using SkeletonUtils (safely, since we don't hack bones anymore)
+        const model = window.SkeletonUtils.clone(window.characterGLTF.scene);
 
-            // Babylon export scale. 0.01 makes it ~1.75 meters tall.
-            const SCALE = 0.01; 
-            
-            model.traverse(node => {
-                if (node.isSkinnedMesh) {
-                    node.frustumCulled = false;
-                    node.castShadow = true;
-                }
-            });
+        // ─────────────────────────────────────────────────────────────────────
+        // THE ULTIMATE THREE.JS SKINNED MESH DOUBLE-SCALE FIX
+        // ─────────────────────────────────────────────────────────────────────
+        // The original dummy3.glb is ~170 units tall. We want it to be 1.7m (scale 0.01).
+        // Because of the Three.js SkinnedMesh double-scale bug, scaling a parent group
+        // applies the scale TWICE in the shader: once via mesh.matrixWorld, and once
+        // via bone.matrixWorld. 
+        // 
+        // Therefore, FinalScale = ParentScale * ParentScale
+        // We want FinalScale = 0.01.
+        // sqrt(0.01) = 0.1!
+        // 
+        // By scaling the parent by 0.1, the shader perfectly shrinks the character to 
+        // 1.7m, and we don't have to break any bones or detach any meshes, keeping 
+        // the hands and feet perfectly connected!
+        // ─────────────────────────────────────────────────────────────────────
+        const SCALE = 0.1;
+        
+        model.scale.set(SCALE, SCALE, SCALE);
+        
+        // At final scale 0.01, the model is at Y=0, so no offset is needed! 
+        // Wait, the feet might be at Y=0 natively in dummy3.glb. Let's leave Y=0.
+        model.position.y = 0; 
+        model.rotation.y = Math.PI;
 
-            // Standard scale + translation
-            model.scale.set(SCALE, SCALE, SCALE);
-            model.position.y = -1.5; 
-            model.rotation.y = Math.PI;
-
-            // Apply Team Colors & Fix Black Materials
-            model.traverse(child => {
-                if (!child.isMesh && !child.isSkinnedMesh) return;
+        // Apply Team Colors
+        model.traverse(child => {
+            if (child.isSkinnedMesh) {
+                child.frustumCulled = false;
                 child.castShadow = true;
                 if (child.material) {
                     const applyMat = (m) => {
@@ -79,46 +86,48 @@ class RemotePlayer extends GameObject3D {
                         ? child.material.map(applyMat) 
                         : applyMat(child.material);
                 }
-            });
-
-            // Name Tag
-            this._nameTag = this._makeNameTag();
-            this._nameTag.scale.set(1.5, 0.375, 1);
-            this._nameTag.position.set(0, 1.9, 0); // 1.9 meters above origin (just above head)
-            model.add(this._nameTag);
-
-            // Ground Ring
-            const ringGeo = new THREE.RingGeometry(0.50, 0.62, 24);
-            const ringMat = new THREE.MeshBasicMaterial({
-                color: teamHex, side: THREE.DoubleSide, transparent: true, opacity: 0.8
-            });
-            const ring = new THREE.Mesh(ringGeo, ringMat);
-            ring.rotation.x = Math.PI / 2;
-            ring.position.y = 0.02;
-            model.add(ring);
-
-            this.mesh.add(model);
-            this._model = model;
-
-            // Animations
-            this._mixer = new THREE.AnimationMixer(model);
-            this._actions = {};
-            for (const clip of gltf.animations) {
-                const action = this._mixer.clipAction(clip);
-                action.loop = THREE.LoopRepeat;
-                this._actions[clip.name] = action;
+            } else if (child.isMesh) {
+                // Hide any static geometry (like the massive red ground plane!)
+                child.visible = false;
             }
-
-            this._animIdle = this._resolveAnimName(['YBot_Idle', 'idle', 'Idle']);
-            this._animWalk = this._resolveAnimName(['YBot_Walk', 'walk', 'Walk']);
-            this._animRun  = this._resolveAnimName(['YBot_Run', 'run', 'Run']);
-            
-            this._playAnim(this._animIdle);
-            
-            // Sync headshot height with actual visual head. Model is ~1.7m tall, 
-            // so 1.55 is a good center for the head sphere (radius 0.28).
-            this.headHeight = 1.55; 
         });
+
+        // Name Tag (Added to this.mesh so it avoids the double scale bug completely)
+        this._nameTag = this._makeNameTag();
+        this._nameTag.scale.set(1.5, 0.375, 1);
+        this._nameTag.position.set(0, 2.0, 0); // 2.0m above origin
+        this.mesh.add(this._nameTag);
+
+        // Ground Ring (Added to this.mesh so it avoids the double scale bug completely)
+        const ringGeo = new THREE.RingGeometry(0.50, 0.62, 24);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: teamHex, side: THREE.DoubleSide, transparent: true, opacity: 0.8
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.02;
+        this.mesh.add(ring);
+
+        this.mesh.add(model);
+        this._model = model;
+
+        // Animations
+        this._mixer = new THREE.AnimationMixer(model);
+        this._actions = {};
+        for (const clip of window.characterGLTF.animations) {
+            const action = this._mixer.clipAction(clip);
+            action.loop = THREE.LoopRepeat;
+            this._actions[clip.name] = action;
+        }
+
+        this._animIdle = this._resolveAnimName(['YBot_Idle', 'idle', 'Idle']);
+        this._animWalk = this._resolveAnimName(['YBot_Walk', 'walk', 'Walk']);
+        this._animRun  = this._resolveAnimName(['YBot_Run', 'run', 'Run']);
+        
+        this._playAnim(this._animIdle);
+        
+        // Sync headshot height with actual visual head.
+        this.headHeight = 1.55; 
     }
 
     _resolveAnimName(candidates) {
