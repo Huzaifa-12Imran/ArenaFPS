@@ -164,40 +164,99 @@ class Player extends GameObject3D {
             this.weaponGroup.add(this.muzzleLight);
 
         } else if (wep.type === 'knife') {
-            // ── Grim Reaper Scythe ─────────────────────────────────────────────
+            // ── Custom Scythe Model (Blockbench JSON) ────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.18, -0.25, -0.35); // Safe distance from camera
+            G.position.set(0.15, -0.1, -0.35); // Adjusted to fit blockbench scale
 
-            const handleMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.9 }); // wood
-            const bladeMat  = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.9, roughness: 0.2 });
-            const wrapMat   = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.95 }); // leather wrap
+            if (!window.loadBlockbenchWeapon) {
+                window.loadBlockbenchWeapon = async (jsonUrl, texUrl) => {
+                    if (!window.blockbenchCache) window.blockbenchCache = {};
+                    if (window.blockbenchCache[jsonUrl]) return window.blockbenchCache[jsonUrl].clone();
 
-            // Long wooden staff
-            G.add(cyl(0.015, 0.015, 1.2, 8, handleMat, 0, -0.1, 0, Math.PI/10));
-            
-            // Leather wrap at grip
-            G.add(cyl(0.017, 0.017, 0.2, 8, wrapMat, 0, -0.05, 0, Math.PI/10));
+                    const group = new THREE.Group();
+                    try {
+                        const response = await fetch(jsonUrl);
+                        const data = await response.json();
+                        const tex = new THREE.TextureLoader().load(texUrl);
+                        tex.magFilter = THREE.NearestFilter;
+                        tex.minFilter = THREE.NearestFilter;
+                        if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+                        const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.1 });
+                        
+                        const texW = data.texture_size ? data.texture_size[0] : 16;
+                        const texH = data.texture_size ? data.texture_size[1] : 16;
 
-            // Scythe Blade Base Bracket
-            G.add(box(0.03, 0.05, 0.06, handleMat, -0.02, 0.40, 0.06));
+                        data.elements.forEach(el => {
+                            const w = el.to[0] - el.from[0];
+                            const h = el.to[1] - el.from[1];
+                            const d = el.to[2] - el.from[2];
+                            if (w===0 && h===0 && d===0) return;
+                            
+                            const geom = new THREE.BoxGeometry(w || 0.01, h || 0.01, d || 0.01);
+                            
+                            const facesMap = ['east', 'west', 'up', 'down', 'south', 'north'];
+                            const uvAttr = geom.attributes.uv;
+                            
+                            for (let i = 0; i < 6; i++) {
+                                const faceName = facesMap[i];
+                                const faceData = el.faces && el.faces[faceName];
+                                const vIdx = i * 4;
+                                if (faceData && faceData.uv) {
+                                    const uMin = faceData.uv[0] / texW;
+                                    const uMax = faceData.uv[2] / texW;
+                                    const vMax = 1.0 - (faceData.uv[1] / texH);
+                                    const vMin = 1.0 - (faceData.uv[3] / texH);
+                                    
+                                    uvAttr.setXY(vIdx + 0, uMin, vMax);
+                                    uvAttr.setXY(vIdx + 1, uMax, vMax);
+                                    uvAttr.setXY(vIdx + 2, uMin, vMin);
+                                    uvAttr.setXY(vIdx + 3, uMax, vMin);
+                                } else {
+                                    for(let v=0;v<4;v++) uvAttr.setXY(vIdx+v, 0, 0);
+                                }
+                            }
+                            
+                            const mesh = new THREE.Mesh(geom, mat);
+                            const cx = (el.from[0] + el.to[0]) / 2;
+                            const cy = (el.from[1] + el.to[1]) / 2;
+                            const cz = (el.from[2] + el.to[2]) / 2;
+                            mesh.position.set(cx, cy, cz);
+                            
+                            if (el.rotation) {
+                                const origin = el.rotation.origin;
+                                mesh.position.set(cx - origin[0], cy - origin[1], cz - origin[2]);
+                                const wrapper = new THREE.Group();
+                                wrapper.position.set(origin[0], origin[1], origin[2]);
+                                wrapper.add(mesh);
+                                const angle = el.rotation.angle * Math.PI / 180;
+                                if (el.rotation.axis === 'x') wrapper.rotation.x = angle;
+                                if (el.rotation.axis === 'y') wrapper.rotation.y = angle;
+                                if (el.rotation.axis === 'z') wrapper.rotation.z = angle;
+                                group.add(wrapper);
+                            } else {
+                                group.add(mesh);
+                            }
+                        });
+                        
+                        group.position.set(-8, -8, -8);
+                        const outer = new THREE.Group();
+                        outer.scale.set(0.015, 0.015, 0.015);
+                        outer.add(group);
+                        
+                        window.blockbenchCache[jsonUrl] = outer;
+                        return outer.clone();
+                    } catch (e) {
+                        console.error('Failed to load blockbench model', e);
+                        return new THREE.Group();
+                    }
+                };
+            }
 
-            // Beautiful Extruded Scythe Blade
-            const shape = new THREE.Shape();
-            shape.moveTo(0, 0); // attachment point
-            // Outer curve: sweeping left and FORWARD (-Y in shape -> -Z in 3D)
-            shape.quadraticCurveTo(-0.25, -0.25, -0.5, -0.4); 
-            // Inner curve: hooking back towards attachment
-            shape.quadraticCurveTo(-0.15, -0.15, 0, -0.06); 
-            
-            const extrudeSettings = { depth: 0.006, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.003, bevelThickness: 0.002 };
-            const bladeGeom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-            const bladeMesh = new THREE.Mesh(bladeGeom, bladeMat);
-            
-            // Lay flat in XZ plane
-            bladeMesh.rotation.x = Math.PI / 2; 
-            bladeMesh.position.set(-0.02, 0.40, 0.06); 
-            
-            G.add(bladeMesh);
+            window.loadBlockbenchWeapon('Scythe.json', 'scythe.png').then(scytheModel => {
+                scytheModel.rotation.y = Math.PI; // Face the right way
+                scytheModel.rotation.z = -Math.PI / 8; // Angle it slightly
+                G.add(scytheModel);
+            });
             
             this.weaponGroup.add(G);
 
