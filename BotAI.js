@@ -24,7 +24,7 @@ class BotAI extends RemotePlayer {
         this.strafeTimer = 0;
         this.burstCount = 0;
         this.burstCooldown = 0;
-        this.headHeight = 0.64; // matches headGroup.position.y in the mesh
+        this.headHeight = 1.55; // Matches RemotePlayer head sphere center
         this.weapon = new Weapon('rifle');
         this.pickNewPatrolTarget();
     }
