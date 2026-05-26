@@ -82,14 +82,14 @@ class Player extends GameObject3D {
         const wep = this.currentWeapon;
 
         // Shared materials
-        const metalMat   = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, metalness: 0.95, roughness: 0.15 });
-        const darkMat    = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.5,  roughness: 0.6  });
-        const gripMat    = new THREE.MeshStandardMaterial({ color: 0x1a0f0f, metalness: 0.1,  roughness: 0.95 });
-        const accentMat  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8,  roughness: 0.2  });
-        const teamColor  = this.team === 'red' ? 0xcc3311 : 0x1144cc;
-        const armMat     = new THREE.MeshStandardMaterial({ color: 0xf0c090, roughness: 0.65, metalness: 0.0 });  // skin
+        const metalMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, metalness: 0.95, roughness: 0.15 });
+        const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.5, roughness: 0.6 });
+        const gripMat = new THREE.MeshStandardMaterial({ color: 0x1a0f0f, metalness: 0.1, roughness: 0.95 });
+        const accentMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8, roughness: 0.2 });
+        const teamColor = this.team === 'red' ? 0xcc3311 : 0x1144cc;
+        const armMat = new THREE.MeshStandardMaterial({ color: 0xf0c090, roughness: 0.65, metalness: 0.0 });  // skin
         const sleeveColor = this.team === 'red' ? 0xcc2222 : 0x2255cc;
-        const armorMat   = new THREE.MeshStandardMaterial({ color: sleeveColor, roughness: 0.55, metalness: 0.05 }); // shirt sleeve
+        const armorMat = new THREE.MeshStandardMaterial({ color: sleeveColor, roughness: 0.55, metalness: 0.05 }); // shirt sleeve
 
         // Helper: add a box mesh
         const box = (w, h, d, mat, x, y, z) => {
@@ -110,34 +110,34 @@ class Player extends GameObject3D {
             G.position.set(0.22, -0.26, -0.18);
 
             // Receiver body
-            G.add(box(0.055, 0.085, 0.38, metalMat,  0,      0,      0     ));
+            G.add(box(0.055, 0.085, 0.38, metalMat, 0, 0, 0));
             // Top rail
-            G.add(box(0.038, 0.018, 0.44, accentMat,  0,      0.053, -0.03 ));
+            G.add(box(0.038, 0.018, 0.44, accentMat, 0, 0.053, -0.03));
             // Handguard (slimmer, longer)
-            G.add(box(0.048, 0.07,  0.26, darkMat,    0,      0.005, -0.30 ));
+            G.add(box(0.048, 0.07, 0.26, darkMat, 0, 0.005, -0.30));
             // Handguard vents (sides)
-            G.add(box(0.005, 0.04,  0.20, accentMat, -0.027,  0.005, -0.30 ));
-            G.add(box(0.005, 0.04,  0.20, accentMat,  0.027,  0.005, -0.30 ));
+            G.add(box(0.005, 0.04, 0.20, accentMat, -0.027, 0.005, -0.30));
+            G.add(box(0.005, 0.04, 0.20, accentMat, 0.027, 0.005, -0.30));
             // Barrel
-            G.add(cyl(0.016, 0.016, 0.38, 8, metalMat, 0, 0.025, -0.56, Math.PI/2));
+            G.add(cyl(0.016, 0.016, 0.38, 8, metalMat, 0, 0.025, -0.56, Math.PI / 2));
             // Muzzle brake
-            G.add(cyl(0.024, 0.024, 0.05, 8, accentMat, 0, 0.025, -0.76, Math.PI/2));
+            G.add(cyl(0.024, 0.024, 0.05, 8, accentMat, 0, 0.025, -0.76, Math.PI / 2));
             // Charging handle
-            G.add(box(0.012, 0.02,  0.04, accentMat,  0.034, 0.025,  0.04 ));
+            G.add(box(0.012, 0.02, 0.04, accentMat, 0.034, 0.025, 0.04));
             // Magazine
-            G.add(box(0.038, 0.15,  0.055, gripMat,   0,     -0.115, -0.01 ));
+            G.add(box(0.038, 0.15, 0.055, gripMat, 0, -0.115, -0.01));
             // Magwell curve hint
-            G.add(box(0.038, 0.03,  0.055, darkMat,   0,     -0.042, -0.01 ));
+            G.add(box(0.038, 0.03, 0.055, darkMat, 0, -0.042, -0.01));
             // Pistol grip
-            G.add(box(0.038, 0.12,  0.048, gripMat,   0,     -0.115,  0.10 ));
+            G.add(box(0.038, 0.12, 0.048, gripMat, 0, -0.115, 0.10));
             // Stock body
-            G.add(box(0.044, 0.065, 0.20,  darkMat,   0,     -0.008,  0.27 ));
+            G.add(box(0.044, 0.065, 0.20, darkMat, 0, -0.008, 0.27));
             // Stock cheekpiece
-            G.add(box(0.044, 0.045, 0.10,  accentMat, 0,      0.025,  0.31 ));
+            G.add(box(0.044, 0.045, 0.10, accentMat, 0, 0.025, 0.31));
             // Front sight post
-            G.add(box(0.007, 0.03,  0.007, accentMat, 0,      0.072, -0.43 ));
+            G.add(box(0.007, 0.03, 0.007, accentMat, 0, 0.072, -0.43));
             // Rear sight
-            G.add(box(0.028, 0.022, 0.012, accentMat, 0,      0.068,  0.01 ));
+            G.add(box(0.028, 0.022, 0.012, accentMat, 0, 0.068, 0.01));
 
             this.weaponGroup.add(G);
 
@@ -166,7 +166,8 @@ class Player extends GameObject3D {
         } else if (wep.type === 'knife') {
             // ── Custom Scythe Model (Blockbench JSON) ────────────────────────
             const G = new THREE.Group();
-            G.position.set(0.10, -0.25, -0.40); // Bottom-right viewmodel position
+            G.position.set(0.20, -0.20, -0.60); // Bottom-right viewmodel position
+            G.rotation.y = 0.40; // Turn slightly to the right to face forward
 
             if (!window.loadBlockbenchWeapon) {
                 window.loadBlockbenchWeapon = async (jsonUrl, texUrl) => {
@@ -182,7 +183,7 @@ class Player extends GameObject3D {
                         tex.minFilter = THREE.NearestFilter;
                         if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
                         const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.1, roughness: 0.8, metalness: 0.1 });
-                        
+
                         const texW = data.texture_size ? data.texture_size[0] : 16;
                         const texH = data.texture_size ? data.texture_size[1] : 16;
 
@@ -190,13 +191,13 @@ class Player extends GameObject3D {
                             const w = el.to[0] - el.from[0];
                             const h = el.to[1] - el.from[1];
                             const d = el.to[2] - el.from[2];
-                            if (w===0 && h===0 && d===0) return;
-                            
+                            if (w === 0 && h === 0 && d === 0) return;
+
                             const geom = new THREE.BoxGeometry(w || 0.01, h || 0.01, d || 0.01);
-                            
+
                             const facesMap = ['east', 'west', 'up', 'down', 'south', 'north'];
                             const uvAttr = geom.attributes.uv;
-                            
+
                             for (let i = 0; i < 6; i++) {
                                 const faceName = facesMap[i];
                                 const faceData = el.faces && el.faces[faceName];
@@ -206,22 +207,22 @@ class Player extends GameObject3D {
                                     const uMax = faceData.uv[2] / texW;
                                     const vMax = 1.0 - (faceData.uv[1] / texH);
                                     const vMin = 1.0 - (faceData.uv[3] / texH);
-                                    
+
                                     uvAttr.setXY(vIdx + 0, uMin, vMax);
                                     uvAttr.setXY(vIdx + 1, uMax, vMax);
                                     uvAttr.setXY(vIdx + 2, uMin, vMin);
                                     uvAttr.setXY(vIdx + 3, uMax, vMin);
                                 } else {
-                                    for(let v=0;v<4;v++) uvAttr.setXY(vIdx+v, 0, 0);
+                                    for (let v = 0; v < 4; v++) uvAttr.setXY(vIdx + v, 0, 0);
                                 }
                             }
-                            
+
                             const mesh = new THREE.Mesh(geom, mat);
                             const cx = (el.from[0] + el.to[0]) / 2;
                             const cy = (el.from[1] + el.to[1]) / 2;
                             const cz = (el.from[2] + el.to[2]) / 2;
                             mesh.position.set(cx, cy, cz);
-                            
+
                             if (el.rotation) {
                                 const origin = el.rotation.origin;
                                 mesh.position.set(cx - origin[0], cy - origin[1], cz - origin[2]);
@@ -237,12 +238,12 @@ class Player extends GameObject3D {
                                 group.add(mesh);
                             }
                         });
-                        
+
                         group.position.set(-8, -8, -8);
                         const outer = new THREE.Group();
                         outer.scale.set(0.009, 0.009, 0.009); // Medium scale
                         outer.add(group);
-                        
+
                         window.blockbenchCache[jsonUrl] = outer;
                         return outer.clone();
                     } catch (e) {
@@ -261,7 +262,7 @@ class Player extends GameObject3D {
                 scytheModel.rotation.z = Math.PI / 2;   // lay it flat/horizontal
                 G.add(scytheModel);
             });
-            
+
             this.weaponGroup.add(G);
 
             // Arm (human)
@@ -286,26 +287,26 @@ class Player extends GameObject3D {
             G.position.set(0.15, -0.15, -0.30); // Pushed back into view to avoid near-plane clipping
 
             const silverMat = new THREE.MeshStandardMaterial({ color: 0xd0d0d0, metalness: 0.85, roughness: 0.25 });
-            const blackMat  = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.8 });
+            const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.2, roughness: 0.8 });
 
             // Massive Slide
             G.add(box(0.05, 0.06, 0.28, silverMat, 0, 0.04, -0.05));
             // Triangle cut on slide (signature look)
-            G.add(cyl(0.02, 0.02, 0.28, 3, silverMat, 0, 0.07, -0.05, Math.PI/2));
-            
+            G.add(cyl(0.02, 0.02, 0.28, 3, silverMat, 0, 0.07, -0.05, Math.PI / 2));
+
             // Frame / Lower
             G.add(box(0.046, 0.03, 0.24, silverMat, 0, 0.0, -0.03));
-            
+
             // Big Barrel opening
-            G.add(cyl(0.016, 0.016, 0.02, 12, blackMat, 0, 0.05, -0.19, Math.PI/2));
+            G.add(cyl(0.016, 0.016, 0.02, 12, blackMat, 0, 0.05, -0.19, Math.PI / 2));
 
             // Heavy trigger guard
             G.add(box(0.046, 0.015, 0.08, silverMat, 0, -0.04, -0.02)); // bottom
             G.add(box(0.046, 0.04, 0.015, silverMat, 0, -0.02, -0.05)); // front
-            
+
             // Trigger
             G.add(box(0.01, 0.03, 0.015, blackMat, 0, -0.02, 0.01));
-            
+
             // Chunky Grip
             const gripG = new THREE.Group();
             gripG.position.set(0, -0.08, 0.06);
@@ -313,10 +314,10 @@ class Player extends GameObject3D {
             gripG.add(box(0.05, 0.11, 0.05, blackMat, 0, 0, 0)); // rubber grip panels
             gripG.rotation.x = 0.15;
             G.add(gripG);
-            
+
             // Magazine Base
             G.add(box(0.046, 0.015, 0.06, blackMat, 0, -0.14, 0.08));
-            
+
             // Iron Sights (blocky)
             G.add(box(0.01, 0.015, 0.015, blackMat, 0, 0.075, -0.17)); // front
             G.add(box(0.04, 0.015, 0.02, blackMat, 0, 0.075, 0.08)); // rear
