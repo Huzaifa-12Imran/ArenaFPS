@@ -14,195 +14,142 @@ class ArenaMap extends GameObject3D {
     createMap() {
         this.mesh = new THREE.Group();
 
-        // ── Floor ──────────────────────────────────────────────────────────
-        // Multi-layer floor: dark base + panel lines + team-tinted zones
-        const floorMat = new THREE.MeshStandardMaterial({
-            color: 0x1a1a22,
-            roughness: 0.85,
-            metalness: 0.15,
-        });
+        // ── Materials ─────────────────────────────────────────────────────────
+        const floorMat  = new THREE.MeshStandardMaterial({ color: 0x14151a, roughness: 0.95, metalness: 0.0 });
+        const wallMat   = new THREE.MeshStandardMaterial({ color: 0x1e2128, roughness: 0.80, metalness: 0.1 });
+        const trimMat   = new THREE.MeshStandardMaterial({ color: 0x2e3240, roughness: 0.5,  metalness: 0.5, emissive: 0x0a0d18, emissiveIntensity: 0.3 });
+        const concMat   = new THREE.MeshStandardMaterial({ color: 0x282c38, roughness: 0.90, metalness: 0.05 });
+        const steelMat  = new THREE.MeshStandardMaterial({ color: 0x323844, roughness: 0.45, metalness: 0.75 });
+        const redMat    = new THREE.MeshStandardMaterial({ color: 0x3a0c0c, roughness: 0.9, emissive: 0x440000, emissiveIntensity: 0.25 });
+        const blueMat   = new THREE.MeshStandardMaterial({ color: 0x0c0c3a, roughness: 0.9, emissive: 0x000044, emissiveIntensity: 0.25 });
+
+        // ── Floor ─────────────────────────────────────────────────────────────
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         this.mesh.add(floor);
 
-        // Tactical grid (fine)
-        const gridFine = new THREE.GridHelper(80, 80, 0x252535, 0x1e1e2e);
-        gridFine.position.y = 0.005;
-        this.mesh.add(gridFine);
+        // Subtle grid overlay
+        const grid = new THREE.GridHelper(80, 40, 0x1e2230, 0x191c28);
+        grid.position.y = 0.005;
+        this.mesh.add(grid);
 
-        // Tactical grid (coarse, brighter)
-        const gridCoarse = new THREE.GridHelper(80, 16, 0x33334a, 0x33334a);
-        gridCoarse.position.y = 0.006;
-        this.mesh.add(gridCoarse);
+        // ── Outer Boundary Walls ──────────────────────────────────────────────
+        const H = 7, T = 1, half = 40;
+        this._addWallWithTrim(0,  H/2, -half, 80, H, T, wallMat, trimMat);
+        this._addWallWithTrim(0,  H/2,  half, 80, H, T, wallMat, trimMat);
+        this._addWallWithTrim(-half, H/2, 0, T, H, 80, wallMat, trimMat);
+        this._addWallWithTrim( half, H/2, 0, T, H, 80, wallMat, trimMat);
 
-        // Center diamond accent (flat plane)
-        const diamondGeo = new THREE.PlaneGeometry(12, 12);
-        const diamondMat = new THREE.MeshStandardMaterial({ color: 0x22223a, roughness: 0.7 });
-        const diamond = new THREE.Mesh(diamondGeo, diamondMat);
-        diamond.rotation.x = -Math.PI / 2;
-        diamond.rotation.z = Math.PI / 4;
-        diamond.position.set(0, 0.01, 0);
-        this.mesh.add(diamond);
-
-        // ── Boundary Walls ─────────────────────────────────────────────────
-        const wallH = 7;
-        const wallThick = 1;
-        const half = 40;
-
-        // Wall material: dark concrete with subtle metallic trim
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x2a2a38, roughness: 0.75, metalness: 0.1 });
-        const trimMat = new THREE.MeshStandardMaterial({ color: 0x3a3a55, roughness: 0.4, metalness: 0.6,
-            emissive: 0x111128, emissiveIntensity: 0.4 });
-
-        this._addWallWithTrim(0, wallH / 2, -half,  80, wallH, wallThick, wallMat, trimMat);
-        this._addWallWithTrim(0, wallH / 2,  half,  80, wallH, wallThick, wallMat, trimMat);
-        this._addWallWithTrim(-half, wallH / 2, 0, wallThick, wallH, 80, wallMat, trimMat);
-        this._addWallWithTrim( half, wallH / 2, 0, wallThick, wallH, 80, wallMat, trimMat);
-
-        // ── Spawn Gates ────────────────────────────────────────────────────
-        // Red gate: right wall (x=+40), with glowing red arch panels
-        this._buildSpawnGate(38, 0, 'red');
-        this._buildSpawnGate(-38, 0, 'blue');
-
-        // ── Central Command Tower ──────────────────────────────────────────
-        const towerMat = new THREE.MeshStandardMaterial({ color: 0x2e2e42, roughness: 0.5, metalness: 0.4 });
-        const towerGlowMat = new THREE.MeshStandardMaterial({
-            color: 0x6644cc, roughness: 0.3, metalness: 0.8,
-            emissive: 0x4422aa, emissiveIntensity: 0.8
-        });
-        // Base
-        this.addWall(0, 1.5, 0, 4, 3, 4, towerMat);
-        // Mid section
-        this.addWall(0, 3.5, 0, 3, 1, 3, towerMat);
-        // Glowing crown
-        this.addWall(0, 4.25, 0, 3.2, 0.5, 3.2, towerGlowMat);
-        // Corner pillars on tower base
-        for (const [sx, sz] of [[-1.8,-1.8],[1.8,-1.8],[-1.8,1.8],[1.8,1.8]]) {
-            this.addWall(sx, 2.5, sz, 0.3, 5, 0.3, towerGlowMat);
-        }
-        // Tower top light
-        const towerLight = new THREE.PointLight(0x8866ff, 3, 15);
-        towerLight.position.set(0, 5.5, 0);
-        this.mesh.add(towerLight);
-        this.coverPositions.push(
-            new THREE.Vector3(4, 0, 0), new THREE.Vector3(-4, 0, 0),
-            new THREE.Vector3(0, 0, 4), new THREE.Vector3(0, 0, -4)
-        );
-
-        // ── Buy Terminal Pillars ───────────────────────────────────────────
-        const p1 = new THREE.Vector3(0, 2, 20);
-        const p2 = new THREE.Vector3(0, 2, -20);
-        this._buildBuyTerminal(p1.x, p1.z);
-        this._buildBuyTerminal(p2.x, p2.z);
-        this.buyPillars.push(p1, p2);
-
-        // ── Cover Structures (themed) ──────────────────────────────────────
-        const concreteMat = new THREE.MeshStandardMaterial({ color: 0x35354a, roughness: 0.8, metalness: 0.05 });
-        const metalCrateMat = new THREE.MeshStandardMaterial({ color: 0x445566, roughness: 0.4, metalness: 0.7,
-            emissive: 0x112233, emissiveIntensity: 0.2 });
-
-        // Mid-lane concrete barriers
-        const barriers = [
-            { x: 10,  z: 0,  w: 5, h: 2.2, d: 1.2, mat: concreteMat },
-            { x: -10, z: 0,  w: 5, h: 2.2, d: 1.2, mat: concreteMat },
-            { x: 0,   z: 12, w: 1.2, h: 2.2, d: 5, mat: concreteMat },
-            { x: 0,   z: -12,w: 1.2, h: 2.2, d: 5, mat: concreteMat },
-        ];
-
-        // Corner L-walls — each corner has two slabs forming an L
-        const lWalls = [
-            // NE
-            { x: 15,  z: 15,  w: 7, h: 3, d: 1,   mat: concreteMat },
-            { x: 18.5,z: 12,  w: 1, h: 3, d: 7,   mat: concreteMat },
-            // SW
-            { x: -15, z: -15, w: 7, h: 3, d: 1,   mat: concreteMat },
-            { x: -18.5,z:-12, w: 1, h: 3, d: 7,   mat: concreteMat },
-            // NW
-            { x: -15, z: 15,  w: 7, h: 3, d: 1,   mat: concreteMat },
-            { x: -18.5,z: 12, w: 1, h: 3, d: 7,   mat: concreteMat },
-            // SE
-            { x: 15,  z: -15, w: 7, h: 3, d: 1,   mat: concreteMat },
-            { x: 18.5,z: -12, w: 1, h: 3, d: 7,   mat: concreteMat },
-        ];
-
-        // Spawn-flank cover (near each base)
-        const flankBoxes = [
-            { x: 26,  z: 8,  w: 3, h: 2.5, d: 3, mat: metalCrateMat },
-            { x: 26,  z: -8, w: 3, h: 2.5, d: 3, mat: metalCrateMat },
-            { x: -26, z: 8,  w: 3, h: 2.5, d: 3, mat: metalCrateMat },
-            { x: -26, z: -8, w: 3, h: 2.5, d: 3, mat: metalCrateMat },
-        ];
-
-        // Mid-field small cover
-        const midSmall = [
-            { x: 8,  z: 8,  w: 2, h: 1.8, d: 2, mat: metalCrateMat },
-            { x: -8, z: -8, w: 2, h: 1.8, d: 2, mat: metalCrateMat },
-            { x: 8,  z: -8, w: 2, h: 1.8, d: 2, mat: metalCrateMat },
-            { x: -8, z: 8,  w: 2, h: 1.8, d: 2, mat: metalCrateMat },
-        ];
-
-        for (const b of [...barriers, ...lWalls, ...flankBoxes, ...midSmall]) {
-            this.addWall(b.x, b.h / 2, b.z, b.w, b.h, b.d, b.mat);
-            this.coverPositions.push(
-                new THREE.Vector3(b.x + b.w / 2 + 1.5, 0, b.z),
-                new THREE.Vector3(b.x - b.w / 2 - 1.5, 0, b.z)
-            );
-        }
-
-        // ── Spawn Zones (colored floor pads) ──────────────────────────────
-        const redPadMat = new THREE.MeshStandardMaterial({
-            color: 0x3a0a0a, roughness: 0.9,
-            emissive: 0x550000, emissiveIntensity: 0.3
-        });
-        const bluePadMat = new THREE.MeshStandardMaterial({
-            color: 0x0a0a3a, roughness: 0.9,
-            emissive: 0x000055, emissiveIntensity: 0.3
-        });
-        const redPad = new THREE.Mesh(new THREE.PlaneGeometry(16, 20), redPadMat);
+        // ── Spawn Zones (A-site = red right, B-site = blue left) ─────────────
+        const redPad  = new THREE.Mesh(new THREE.PlaneGeometry(16, 20), redMat);
         redPad.rotation.x = -Math.PI / 2;
         redPad.position.set(33, 0.02, 0);
         this.mesh.add(redPad);
 
-        const bluePad = new THREE.Mesh(new THREE.PlaneGeometry(16, 20), bluePadMat);
+        const bluePad = new THREE.Mesh(new THREE.PlaneGeometry(16, 20), blueMat);
         bluePad.rotation.x = -Math.PI / 2;
         bluePad.position.set(-33, 0.02, 0);
         this.mesh.add(bluePad);
 
-        // Spawn zone floor trim lines
-        this._addFloorRing(33, 0, 9, 10, 0xff2222, 0.04);
-        this._addFloorRing(-33, 0, 9, 10, 0x2244ff, 0.04);
+        // Spawn zone ring markers
+        this._addFloorRing( 33, 0, 9, 12, 0xff2222, 0.04);
+        this._addFloorRing(-33, 0, 9, 12, 0x2244ff, 0.04);
 
-        // ── Spawn Lights ───────────────────────────────────────────────────
-        const redSpawnLight = new THREE.PointLight(0xff2222, 3, 22);
-        redSpawnLight.position.set(33, 5, 0);
-        this.mesh.add(redSpawnLight);
+        // Spawn lights
+        this.mesh.add(Object.assign(new THREE.PointLight(0xff3322, 2.5, 22), { position: new THREE.Vector3(33, 5, 0) }));
+        this.mesh.add(Object.assign(new THREE.PointLight(0x2244ff, 2.5, 22), { position: new THREE.Vector3(-33, 5, 0) }));
 
-        const blueSpawnLight = new THREE.PointLight(0x2244ff, 3, 22);
-        blueSpawnLight.position.set(-33, 5, 0);
-        this.mesh.add(blueSpawnLight);
+        // ── Spawn Gates ───────────────────────────────────────────────────────
+        this._buildSpawnGate( 38, 0, 'red');
+        this._buildSpawnGate(-38, 0, 'blue');
 
-        // Ceiling strip lights along walls
+        // ── MID — Central Control Building (walkthrough structure) ────────────
+        // Main building box with open doorways (three separate wall segments)
+        this.addWall( 0, 2.5,  0, 8, 5, 1.5, steelMat);   // front face
+        this.addWall( 0, 2.5,  0, 8, 5, 1.5, steelMat);   // (symmetric)
+        // Left and right sides of mid building
+        this.addWall(-4.5, 2.5, 0, 1.5, 5, 8, steelMat);
+        this.addWall( 4.5, 2.5, 0, 1.5, 5, 8, steelMat);
+        // Roof
+        this.addWall(0, 5.2, 0, 8, 0.4, 8, steelMat);
+        // Catwalk/ledge players can use for height
+        this.addWall(0, 3.0, 3.5, 6, 0.3, 1, steelMat);
+        this.addWall(0, 3.0, -3.5, 6, 0.3, 1, steelMat);
+
+        // Mid ambient light
+        this.mesh.add(Object.assign(new THREE.PointLight(0xffffff, 1.2, 18), { position: new THREE.Vector3(0, 5, 0) }));
+
+        this.coverPositions.push(
+            new THREE.Vector3(6, 0, 0), new THREE.Vector3(-6, 0, 0),
+            new THREE.Vector3(0, 0, 6), new THREE.Vector3(0, 0, -6)
+        );
+
+        // ── BUY TERMINALS (N and S of mid) ────────────────────────────────────
+        const t1 = new THREE.Vector3(0, 2, 22);
+        const t2 = new THREE.Vector3(0, 2, -22);
+        this._buildBuyTerminal(t1.x, t1.z);
+        this._buildBuyTerminal(t2.x, t2.z);
+        this.buyPillars.push(t1, t2);
+
+        // ── CORRIDORS — North and South lanes with walls ──────────────────────
+        // North corridor wall segments (leave gaps as doors/chokepoints)
+        this.addWall(-20, 2, 16, 18, 4, 1.5, wallMat);   // left block N
+        this.addWall( 20, 2, 16, 18, 4, 1.5, wallMat);   // right block N
+        this.addWall(-20, 2,-16, 18, 4, 1.5, wallMat);   // left block S
+        this.addWall( 20, 2,-16, 18, 4, 1.5, wallMat);   // right block S
+
+        // ── A-SITE COVER (red side, x > 10) ──────────────────────────────────
+        // Large L-wall near A
+        this.addWall(18, 1.5,  6, 1.5, 3, 10, concMat);
+        this.addWall(22, 1.5, 10, 7,   3, 1.5, concMat);
+        // Two crates
+        this.addWall(24, 1.2,  0, 3, 2.4, 3, steelMat);
+        this.addWall(15, 1.2,  8, 2.5, 2.4, 2.5, steelMat);
+        // Low barrier across entrance
+        this.addWall(12, 0.8, -4, 5, 1.6, 1.2, concMat);
+
+        this.coverPositions.push(
+            new THREE.Vector3(17, 0,  5), new THREE.Vector3(23, 0, 10),
+            new THREE.Vector3(25, 0,  0), new THREE.Vector3(14, 0,  7),
+            new THREE.Vector3(11, 0, -3)
+        );
+
+        // ── B-SITE COVER (blue side, x < -10) ────────────────────────────────
+        this.addWall(-18, 1.5, -6, 1.5, 3, 10, concMat);
+        this.addWall(-22, 1.5,-10, 7,   3, 1.5, concMat);
+        this.addWall(-24, 1.2,  0, 3, 2.4, 3, steelMat);
+        this.addWall(-15, 1.2, -8, 2.5, 2.4, 2.5, steelMat);
+        this.addWall(-12, 0.8,  4, 5, 1.6, 1.2, concMat);
+
+        this.coverPositions.push(
+            new THREE.Vector3(-17, 0, -5), new THREE.Vector3(-23, 0,-10),
+            new THREE.Vector3(-25, 0,  0), new THREE.Vector3(-14, 0, -7),
+            new THREE.Vector3(-11, 0,  3)
+        );
+
+        // ── FLANK ROUTES — diagonal pillars at corners ────────────────────────
+        for (const [sx, sz] of [[1,1],[1,-1],[-1,1],[-1,-1]]) {
+            this.addWall(sx*28, 2, sz*28, 4, 4, 1.5, concMat);
+            this.addWall(sx*28, 2, sz*24, 1.5, 4, 4,   concMat);
+        }
+
+        // ── Ambient/Ceiling Lights ─────────────────────────────────────────────
         this._addStripLights();
 
-        // ── Spawn Points ───────────────────────────────────────────────────
+        // ── Spawn Points ──────────────────────────────────────────────────────
         this.redSpawns = [
-            new THREE.Vector3(33, 1.5, -4),
-            new THREE.Vector3(33, 1.5,  4),
-            new THREE.Vector3(31, 1.5,  0),
-            new THREE.Vector3(35, 1.5,  0),
+            new THREE.Vector3(33, 1.5, -4), new THREE.Vector3(33, 1.5,  4),
+            new THREE.Vector3(31, 1.5,  0), new THREE.Vector3(35, 1.5,  0),
         ];
         this.blueSpawns = [
-            new THREE.Vector3(-33, 1.5, -4),
-            new THREE.Vector3(-33, 1.5,  4),
-            new THREE.Vector3(-31, 1.5,  0),
-            new THREE.Vector3(-35, 1.5,  0),
+            new THREE.Vector3(-33, 1.5, -4), new THREE.Vector3(-33, 1.5,  4),
+            new THREE.Vector3(-31, 1.5,  0), new THREE.Vector3(-35, 1.5,  0),
         ];
 
         this.mesh.position.copy(this.position);
         this.scene.add(this.mesh);
 
-        // Particle emitters (stored for update)
         this._particles = [];
         this._initParticles();
     }
