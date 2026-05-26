@@ -57,8 +57,12 @@ class ArenaMap extends GameObject3D {
         this._addFloorRing(-33, 0, 9, 12, 0x2244ff, 0.04);
 
         // Spawn lights
-        this.mesh.add(Object.assign(new THREE.PointLight(0xff3322, 2.5, 22), { position: new THREE.Vector3(33, 5, 0) }));
-        this.mesh.add(Object.assign(new THREE.PointLight(0x2244ff, 2.5, 22), { position: new THREE.Vector3(-33, 5, 0) }));
+        const redSpawnLight = new THREE.PointLight(0xff3322, 2.5, 22);
+        redSpawnLight.position.set(33, 5, 0);
+        this.mesh.add(redSpawnLight);
+        const blueSpawnLight = new THREE.PointLight(0x2244ff, 2.5, 22);
+        blueSpawnLight.position.set(-33, 5, 0);
+        this.mesh.add(blueSpawnLight);
 
         // ── Spawn Gates ───────────────────────────────────────────────────────
         this._buildSpawnGate( 38, 0, 'red');
@@ -78,7 +82,9 @@ class ArenaMap extends GameObject3D {
         this.addWall(0, 3.0, -3.5, 6, 0.3, 1, steelMat);
 
         // Mid ambient light
-        this.mesh.add(Object.assign(new THREE.PointLight(0xffffff, 1.2, 18), { position: new THREE.Vector3(0, 5, 0) }));
+        const midLight = new THREE.PointLight(0xffffff, 1.2, 18);
+        midLight.position.set(0, 5, 0);
+        this.mesh.add(midLight);
 
         this.coverPositions.push(
             new THREE.Vector3(6, 0, 0), new THREE.Vector3(-6, 0, 0),
