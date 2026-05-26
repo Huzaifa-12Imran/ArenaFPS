@@ -582,8 +582,8 @@ class Game {
         // ---------- cached allocations (created once, reused every shot) ----------
         if (!this._ray) {
             this._ray          = new THREE.Ray();
-            this._bodySphere   = new THREE.Sphere(new THREE.Vector3(), 0.95);
-            this._headSphere   = new THREE.Sphere(new THREE.Vector3(), 0.28);
+            this._bodySphere   = new THREE.Sphere(new THREE.Vector3(), 0.45);
+            this._headSphere   = new THREE.Sphere(new THREE.Vector3(), 0.22);
             this._bodyIntersect = new THREE.Vector3();
             this._headIntersect = new THREE.Vector3();
         }
@@ -625,15 +625,8 @@ class Game {
         const hI = this._headIntersect;
         const headHit = this._ray.intersectSphere(this._headSphere, hI);
 
-        // Return the closer of the two hits (and clone the point so the
-        // caller can't accidentally mutate the cached vector).
-        if (headHit && bodyHit) {
-            const hd = origin.distanceTo(hI);
-            const bd = origin.distanceTo(bI);
-            return hd < bd
-                ? { hit: true, distance: hd, point: hI.clone(), isHead: true  }
-                : { hit: true, distance: bd, point: bI.clone(), isHead: false };
-        }
+        // Head always wins over body — it's a smaller, deliberate target.
+        // If the ray clips both, we reward the more precise aim.
         if (headHit) return { hit: true, distance: origin.distanceTo(hI), point: hI.clone(), isHead: true  };
         if (bodyHit) return { hit: true, distance: origin.distanceTo(bI), point: bI.clone(), isHead: false };
         return { hit: false, distance: Infinity, point: null };
