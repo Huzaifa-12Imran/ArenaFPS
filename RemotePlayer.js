@@ -43,28 +43,20 @@ class RemotePlayer extends GameObject3D {
         const model = window.SkeletonUtils.clone(window.characterGLTF.scene);
 
         // ─────────────────────────────────────────────────────────────────────
-        // THE ULTIMATE THREE.JS SKINNED MESH DOUBLE-SCALE FIX
+        // THE TRUE SOLUTION
         // ─────────────────────────────────────────────────────────────────────
-        // The original dummy3.glb is ~170 units tall. We want it to be 1.7m (scale 0.01).
-        // Because of the Three.js SkinnedMesh double-scale bug, scaling a parent group
-        // applies the scale TWICE in the shader: once via mesh.matrixWorld, and once
-        // via bone.matrixWorld. 
-        // 
-        // Therefore, FinalScale = ParentScale * ParentScale
-        // We want FinalScale = 0.01.
-        // sqrt(0.01) = 0.1!
-        // 
-        // By scaling the parent by 0.1, the shader perfectly shrinks the character to 
-        // 1.7m, and we don't have to break any bones or detach any meshes, keeping 
-        // the hands and feet perfectly connected!
+        // GLTFLoader automatically handles glTF unit conversions. The dummy3.glb 
+        // model is already perfectly scaled to ~1.7 meters tall in Three.js units.
+        // There is no double-scale bug. Scaling the model by 0.01 shrinks it to
+        // 1.7 centimeters. We just need to leave the scale at 1.0!
         // ─────────────────────────────────────────────────────────────────────
-        const SCALE = 0.1;
+        const SCALE = 1.0;
         
         model.scale.set(SCALE, SCALE, SCALE);
         
-        // At final scale 0.01, the model is at Y=0, so no offset is needed! 
-        // Wait, the feet might be at Y=0 natively in dummy3.glb. Let's leave Y=0.
-        model.position.y = 0; 
+        // We offset Y by -1.5 because the BotAI/Player position is the center of the 
+        // 1.7m physics capsule (Y=1.5 from the floor).
+        model.position.y = -1.5; 
         model.rotation.y = Math.PI;
 
         // Apply Team Colors
@@ -95,7 +87,7 @@ class RemotePlayer extends GameObject3D {
         // Name Tag (Added to this.mesh so it avoids the double scale bug completely)
         this._nameTag = this._makeNameTag();
         this._nameTag.scale.set(1.5, 0.375, 1);
-        this._nameTag.position.set(0, 2.0, 0); // 2.0m above origin
+        this._nameTag.position.set(0, 0.5, 0); // 0.5m above the physics center (1.5 + 0.5 = 2.0m world height)
         this.mesh.add(this._nameTag);
 
         // Ground Ring (Added to this.mesh so it avoids the double scale bug completely)
@@ -105,7 +97,7 @@ class RemotePlayer extends GameObject3D {
         });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.rotation.x = Math.PI / 2;
-        ring.position.y = 0.02;
+        ring.position.y = -1.48; // Floor level (-1.5 + 0.02)
         this.mesh.add(ring);
 
         this.mesh.add(model);
