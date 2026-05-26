@@ -762,6 +762,54 @@ class Game {
         document.getElementById('victoryTitle').textContent = 'VICTORY';
         document.getElementById('victoryTeam').innerHTML = `<span style="color:${winColor}">${winner} TEAM WINS!</span>`;
         document.getElementById('victoryScore').textContent = `RED ${this.redScore} - ${this.blueScore} BLUE`;
+        
+        // Generate match leaderboard
+        const players = [];
+        if (this.player) {
+            players.push({
+                name: 'You',
+                team: this.player.team,
+                kills: this.player.kills || 0,
+                deaths: this.player.deaths || 0
+            });
+        }
+        this.bots.forEach(bot => {
+            players.push({
+                name: bot.name || 'Bot',
+                team: bot.team,
+                kills: bot.kills || 0,
+                deaths: bot.deaths || 0
+            });
+        });
+        
+        // Sort by kills (descending), then deaths (ascending)
+        players.sort((a, b) => {
+            if (b.kills !== a.kills) return b.kills - a.kills;
+            return a.deaths - b.deaths;
+        });
+        
+        const lbHtml = `
+            <table style="width: 100%; border-collapse: collapse; font-family: 'Share Tech Mono', monospace; font-size: 16px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #555; text-align: left;">
+                        <th style="padding: 5px; color: #aaa;">PLAYER</th>
+                        <th style="padding: 5px; color: #aaa; text-align: right;">K</th>
+                        <th style="padding: 5px; color: #aaa; text-align: right;">D</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${players.map(p => `
+                        <tr>
+                            <td style="padding: 5px; color: ${p.team === 'red' ? '#ff6666' : '#66aaff'}">${p.name}</td>
+                            <td style="padding: 5px; text-align: right;">${p.kills}</td>
+                            <td style="padding: 5px; text-align: right; color: #888;">${p.deaths}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        document.getElementById('matchLeaderboard').innerHTML = lbHtml;
+
         victoryScreen.style.display = 'flex';
 
         // Save
