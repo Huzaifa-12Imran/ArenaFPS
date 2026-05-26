@@ -599,8 +599,11 @@ class Game {
         // We use radius 0.55 to comfortably cover torso + arms without being
         // unfairly large (previous value 0.5 was centred at the FEET).
         // ------------------------------------------------------------------
+        // entity.position.y == physics capsule centre (≈1.5 above floor).
+        // Visual model is offset -1.5, so model feet are at world Y=0.
+        // Body centre is at world Y≈0.85 → 0.85 - 1.5 = -0.65 offset.
         this._bodySphere.center.copy(entity.position);
-        this._bodySphere.center.y += -0.4; // centre between boots (y=-1.25) and neck (y=+0.45)
+        this._bodySphere.center.y -= 0.65; // puts centre at world Y≈0.85 (mid-torso)
 
         // Make a clean copy of the intersect vector BEFORE the call because
         // Three.js may not write to it when there is no hit (leaving stale data).
@@ -613,8 +616,11 @@ class Game {
         // The actual head mesh top is around feet+1.65; centre it at feet+1.55.
         // For the local player it doesn't matter (you can't shoot yourself).
         // ------------------------------------------------------------------
+        // Head centre is at world Y≈1.55 → 1.55 - 1.5 = +0.05 offset.
+        // entity.headHeight is now ignored and replaced with this fixed offset
+        // so it always matches the visual model regardless of old default values.
         this._headSphere.center.copy(entity.position);
-        this._headSphere.center.y += (entity.headHeight != null ? entity.headHeight : 0.64);
+        this._headSphere.center.y += 0.05; // puts centre at world Y≈1.55 (mid-head)
 
         const hI = this._headIntersect;
         const headHit = this._ray.intersectSphere(this._headSphere, hI);
