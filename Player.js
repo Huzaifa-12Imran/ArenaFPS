@@ -552,12 +552,26 @@ class Player extends GameObject3D {
         }
 
         this.velocity.y += this.gravity * dt;
-        this.position.y += this.velocity.y * dt;
+        const expectedY = this.position.y + this.velocity.y * dt;
+        
+        let groundY = 1.5;
+        let ceilingY = Infinity;
+        if (arenaMap) {
+            groundY = arenaMap.getGroundY(this.position, this.radius);
+            ceilingY = arenaMap.getCeilingY(this.position, this.radius);
+        }
 
-        if (this.position.y <= 1.5) {
-            this.position.y = 1.5;
+        if (expectedY + 0.5 >= ceilingY && this.velocity.y > 0) {
+            this.position.y = ceilingY - 0.5;
+            this.velocity.y = 0;
+            this.onGround = false;
+        } else if (expectedY <= groundY) {
+            this.position.y = groundY;
             this.velocity.y = 0;
             this.onGround = true;
+        } else {
+            this.position.y = expectedY;
+            this.onGround = false;
         }
 
         // Update camera

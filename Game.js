@@ -744,10 +744,12 @@ class Game {
             });
         }
 
+        killer.kills = (killer.kills || 0) + 1;
+        victim.deaths = (victim.deaths || 0) + 1;
+
         // Credits for kills
         if (killer === this.player) {
             this.credits += headshot ? 150 : 100;
-            killer.kills++;
             if (this.playerData) {
                 this.playerData.totalKills = (this.playerData.totalKills || 0) + 1;
                 this.playerData.credits = this.credits;
@@ -847,9 +849,14 @@ class Game {
         const winner = this.redScore >= this.maxScore ? 'RED' : 'BLUE';
         const winColor = winner === 'RED' ? '#ff4444' : '#4488ff';
 
+        let isVictory = true;
+        if (this.player) {
+            isVictory = (this.player.team.toUpperCase() === winner);
+        }
+
         const victoryScreen = document.getElementById('victoryScreen');
-        document.getElementById('victoryTitle').style.color = winColor;
-        document.getElementById('victoryTitle').textContent = 'VICTORY';
+        document.getElementById('victoryTitle').style.color = isVictory ? winColor : '#888888';
+        document.getElementById('victoryTitle').textContent = isVictory ? 'VICTORY!' : 'DEFEAT';
         document.getElementById('victoryTeam').innerHTML = `<span style="color:${winColor}">${winner} TEAM WINS!</span>`;
         document.getElementById('victoryScore').textContent = `RED ${this.redScore} - ${this.blueScore} BLUE`;
 
