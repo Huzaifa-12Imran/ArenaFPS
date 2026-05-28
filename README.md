@@ -6,7 +6,7 @@
     <img src="https://img.shields.io/badge/Three.js-black?style=for-the-badge&logo=three.js&logoColor=white" alt="Three.js" />
     <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript" />
     <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5" />
-    <img src="https://img.shields.io/badge/Multiplayer-Ready-success?style=for-the-badge" alt="Multiplayer" />
+    <img src="https://img.shields.io/badge/Multiplayer-Under_Development-orange?style=for-the-badge" alt="Multiplayer" />
   </p>
 </div>
 
@@ -23,7 +23,7 @@
 - **💰 In-Game Economy:** Earn credits from kills to purchase tactical upgrades like Body Armor, Speed Boosts, and Extra Ammo from Buy Terminals.
 - **🗺️ Interactive Map:** A meticulously designed desert-themed arena featuring raised platforms, catwalks, corner watchtowers, and multi-level terrain.
 - **🏆 Leaderboards & Tracking:** Real-time kill feeds, hit markers, damage numbers, and a comprehensive end-of-match leaderboard.
-- **🌐 Multiplayer Support:** Built-in multiplayer architecture that smoothly syncs players, states, and projectiles.
+- **🌐 Multiplayer Support (Under Development):** Built-in multiplayer architecture that syncs players, states, and projectiles (currently being actively developed and refined).
 
 ## 🚀 Getting Started
 
