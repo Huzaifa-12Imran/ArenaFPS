@@ -1,4 +1,6 @@
 <div align="center">
+  <img src="thumbnail.png" alt="ArenaFPS Thumbnail" width="800" />
+  <br/><br/>
   <h1>🎯 ArenaFPS</h1>
   <p><strong>A fast-paced, browser-based 3D First-Person Shooter built with Three.js</strong></p>
   
