@@ -79,6 +79,10 @@ class Player extends GameObject3D {
         while (this.weaponGroup.children.length)
             this.weaponGroup.remove(this.weaponGroup.children[0]);
 
+        // Bust the Blockbench model cache AND loader so code changes always take effect
+        window.blockbenchCache = {};
+        window.loadBlockbenchWeapon = null;
+
         const wep = this.currentWeapon;
 
         // Shared materials
@@ -164,109 +168,112 @@ class Player extends GameObject3D {
             this.weaponGroup.add(this.muzzleLight);
 
         } else if (wep.type === 'knife') {
-            // ── Custom Scythe Model (Blockbench JSON) ────────────────────────
+            // ── Scythe (procedural Three.js geometry) ───────────────────────
             const G = new THREE.Group();
-            G.position.set(0.28, -0.35, -0.25); // Match other weapons' coordinate space
+            // Lower-right corner, staff angled diagonally across screen
+            G.position.set(0.22, -0.30, -0.44);
+            G.rotation.order = 'YXZ';
+            G.rotation.set(-0.20, 0.06, -0.48);
 
-            if (!window.loadBlockbenchWeapon) {
-                window.loadBlockbenchWeapon = async (jsonUrl, texUrl) => {
-                    if (!window.blockbenchCache) window.blockbenchCache = {};
-                    if (window.blockbenchCache[jsonUrl]) return window.blockbenchCache[jsonUrl].clone();
-
-                    const group = new THREE.Group();
-                    try {
-                        const response = await fetch(jsonUrl);
-                        const data = await response.json();
-                        const tex = new THREE.TextureLoader().load(texUrl);
-                        tex.magFilter = THREE.NearestFilter;
-                        tex.minFilter = THREE.NearestFilter;
-                        if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
-                        const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.1, roughness: 0.8, metalness: 0.1 });
-
-                        const texW = data.texture_size ? data.texture_size[0] : 16;
-                        const texH = data.texture_size ? data.texture_size[1] : 16;
-
-                        data.elements.forEach(el => {
-                            const w = el.to[0] - el.from[0];
-                            const h = el.to[1] - el.from[1];
-                            const d = el.to[2] - el.from[2];
-                            if (w === 0 && h === 0 && d === 0) return;
-
-                            const geom = new THREE.BoxGeometry(w || 0.01, h || 0.01, d || 0.01);
-
-                            const facesMap = ['east', 'west', 'up', 'down', 'south', 'north'];
-                            const uvAttr = geom.attributes.uv;
-
-                            for (let i = 0; i < 6; i++) {
-                                const faceName = facesMap[i];
-                                const faceData = el.faces && el.faces[faceName];
-                                const vIdx = i * 4;
-                                if (faceData && faceData.uv) {
-                                    const uMin = faceData.uv[0] / texW;
-                                    const uMax = faceData.uv[2] / texW;
-                                    const vMax = 1.0 - (faceData.uv[1] / texH);
-                                    const vMin = 1.0 - (faceData.uv[3] / texH);
-
-                                    uvAttr.setXY(vIdx + 0, uMin, vMax);
-                                    uvAttr.setXY(vIdx + 1, uMax, vMax);
-                                    uvAttr.setXY(vIdx + 2, uMin, vMin);
-                                    uvAttr.setXY(vIdx + 3, uMax, vMin);
-                                } else {
-                                    for (let v = 0; v < 4; v++) uvAttr.setXY(vIdx + v, 0, 0);
-                                }
-                            }
-
-                            const mesh = new THREE.Mesh(geom, mat);
-                            const cx = (el.from[0] + el.to[0]) / 2;
-                            const cy = (el.from[1] + el.to[1]) / 2;
-                            const cz = (el.from[2] + el.to[2]) / 2;
-                            mesh.position.set(cx, cy, cz);
-
-                            if (el.rotation) {
-                                const origin = el.rotation.origin;
-                                mesh.position.set(cx - origin[0], cy - origin[1], cz - origin[2]);
-                                const wrapper = new THREE.Group();
-                                wrapper.position.set(origin[0], origin[1], origin[2]);
-                                wrapper.add(mesh);
-                                const angle = el.rotation.angle * Math.PI / 180;
-                                if (el.rotation.axis === 'x') wrapper.rotation.x = angle;
-                                if (el.rotation.axis === 'y') wrapper.rotation.y = angle;
-                                if (el.rotation.axis === 'z') wrapper.rotation.z = angle;
-                                group.add(wrapper);
-                            } else {
-                                group.add(mesh);
-                            }
-                        });
-
-                        group.position.set(-8, -8, -8);
-                        const outer = new THREE.Group();
-                        outer.scale.set(0.009, 0.009, 0.009); // Medium scale
-                        outer.add(group);
-
-                        window.blockbenchCache[jsonUrl] = outer;
-                        return outer.clone();
-                    } catch (e) {
-                        console.error('Failed to load blockbench model', e);
-                        return new THREE.Group();
-                    }
-                };
-            }
-
-            window.loadBlockbenchWeapon('Scythe.json', 'scythe.png').then(scytheModel => {
-                // X=-PI/2: convert Y-up blockbench to Z-forward three.js
-                // Z=+PI/2: swing staff from vertical to horizontal (pointing right)
-                // Y=PI: face correctly, not mirrored
-                scytheModel.rotation.x = -Math.PI / 2;
-                scytheModel.rotation.y = Math.PI;
-                scytheModel.rotation.z = Math.PI / 2;   // lay it flat/horizontal
-                G.add(scytheModel);
+            const bladeMat = new THREE.MeshStandardMaterial({
+                color: 0xc8cfd6, metalness: 0.90, roughness: 0.18,
+                emissive: new THREE.Color(0.06, 0.09, 0.08), emissiveIntensity: 1.0
             });
+            const staffMat = new THREE.MeshStandardMaterial({
+                color: 0x3a2a1a, metalness: 0.15, roughness: 0.85
+            });
+            const bandMat = new THREE.MeshStandardMaterial({
+                color: 0x888070, metalness: 0.60, roughness: 0.40
+            });
+
+            // ── Helper ──────────────────────────────────────────────────────
+            const addBox = (parent, w, h, d, mat, x, y, z, rx = 0, ry = 0, rz = 0) => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+                m.position.set(x, y, z);
+                if (rx) m.rotation.x = rx;
+                if (ry) m.rotation.y = ry;
+                if (rz) m.rotation.z = rz;
+                parent.add(m); return m;
+            };
+            const addCyl = (parent, rt, rb, h, seg, mat, x, y, z, rx = 0, ry = 0, rz = 0) => {
+                const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat);
+                m.position.set(x, y, z);
+                if (rx) m.rotation.x = rx;
+                if (ry) m.rotation.y = ry;
+                if (rz) m.rotation.z = rz;
+                parent.add(m); return m;
+            };
+
+            // ── Staff ────────────────────────────────────────────────────────
+            const SH = 0.38;
+            addCyl(G, 0.010, 0.012, SH, 8, staffMat, 0, SH * 0.5, 0);
+            addCyl(G, 0.014, 0.014, 0.014, 8, bandMat, 0, SH * 0.18, 0);
+            addCyl(G, 0.014, 0.014, 0.014, 8, bandMat, 0, SH * 0.55, 0);
+            addCyl(G, 0.014, 0.014, 0.014, 8, bandMat, 0, SH * 0.85, 0);
+            addCyl(G, 0.018, 0.010, 0.022, 8, bandMat, 0, 0.011, 0);
+            addCyl(G, 0.018, 0.018, 0.020, 8, bandMat, 0, SH - 0.005, 0);
+
+            // ── Blade — crescent sweeping up then back ───────────────────
+            // Each segment is a child of the previous so rotations chain correctly.
+            // The blade arc is built with nested groups — each one tilts a bit more
+            // along X, so the tip curves from vertical (at the heel) to nearly
+            // horizontal (at the tip), all staying connected.
+            const bladeG = new THREE.Group();
+            bladeG.position.set(0, SH, 0);
+            bladeG.rotation.order = 'YXZ';
+            bladeG.rotation.set(0, 0, 1.8); // Points left/down, no Y flip so edge is on the bottom
+
+            // Heel socket collar
+            addBox(bladeG, 0.024, 0.028, 0.030, bladeMat, 0, 0.014, 0);
+
+            // Segment 1 — vertical, just above collar
+            const seg1 = new THREE.Group();
+            seg1.position.set(0, 0.028, 0);
+            addBox(seg1, 0.016, 0.090, 0.016, bladeMat, 0, 0.045, 0);
+            addBox(seg1, 0.026, 0.090, 0.008, bladeMat, 0.005, 0.045, 0.010); // spine
+            bladeG.add(seg1);
+
+            // Segment 2 — begins to tilt forward
+            const seg2 = new THREE.Group();
+            seg2.position.set(0, 0.088, 0); // slightly overlap the joint
+            seg2.rotation.x = -0.38; // Negative makes it curve forward
+            addBox(seg2, 0.014, 0.085, 0.020, bladeMat, 0, 0.042, -0.002);
+            addBox(seg2, 0.024, 0.085, 0.008, bladeMat, 0.005, 0.042, 0.008);
+            seg1.add(seg2); // properly nested!
+
+            // Segment 3 — more curve
+            const seg3 = new THREE.Group();
+            seg3.position.set(0, 0.083, 0);
+            seg3.rotation.x = -0.34; // total -0.72
+            addBox(seg3, 0.012, 0.075, 0.028, bladeMat, 0, 0.037, -0.004);
+            addBox(seg3, 0.022, 0.075, 0.008, bladeMat, 0.005, 0.037, 0.010);
+            seg2.add(seg3);
+
+            // Segment 4 — nearly horizontal tip
+            const seg4 = new THREE.Group();
+            seg4.position.set(0, 0.073, 0);
+            seg4.rotation.x = -0.33; // total -1.05
+            addBox(seg4, 0.010, 0.055, 0.022, bladeMat, 0, 0.027, -0.004);
+            seg3.add(seg4);
+
+            // Tip taper
+            const seg5 = new THREE.Group();
+            seg5.position.set(0, 0.053, 0);
+            seg5.rotation.x = -0.25; // total -1.30
+            addBox(seg5, 0.007, 0.032, 0.014, bladeMat, 0, 0.016, -0.002);
+            seg4.add(seg5);
+
+            G.add(bladeG);
+
+            const scytheLight = new THREE.PointLight(0xaaccbb, 1.4, 1.8);
+            scytheLight.position.set(0, SH + 0.15, -0.06);
+            G.add(scytheLight);
 
             this.weaponGroup.add(G);
 
-            // Arm (human)
+            // ── Arm ─────────────────────────────────────────────────────────
             const arm = new THREE.Group();
-            arm.position.set(0.18, -0.35, -0.05); // Pulled back to match weapon position
+            arm.position.set(0.26, -0.22, 0.04);
             const slvK = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.060, 0.20, 10), armorMat);
             slvK.rotation.x = Math.PI / 2; slvK.position.set(0, 0, -0.10); arm.add(slvK);
             const elbK = new THREE.Mesh(new THREE.SphereGeometry(0.062, 8, 6), armMat);

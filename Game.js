@@ -152,7 +152,7 @@ class Game {
             document.getElementById('hud').style.display = 'block';
             this.matchStarted = true;
             this.isRunning = true;
-            
+
             // Request pointer lock; try-catch to avoid unhandled rejections in sandboxed browsers
             try {
                 const lockPromise = document.body.requestPointerLock();
@@ -235,7 +235,7 @@ class Game {
             // character drifting indefinitely (stuck D / W / etc.).
             this.keys = {};
             if (this.player) {
-                this.player.keys    = {};
+                this.player.keys = {};
                 this.player.isShooting = false;
             }
 
@@ -291,7 +291,7 @@ class Game {
                 if (e.code === 'Digit1') this.player.switchWeapon(0);
                 if (e.code === 'Digit2') this.player.switchWeapon(1);
                 if (e.code === 'Digit3') this.player.switchWeapon(2);
-                if (e.code === 'KeyF')   this.player.switchWeapon(2); // quick knife
+                if (e.code === 'KeyF') this.player.switchWeapon(2); // quick knife
                 // Buy menu
                 if (e.code === 'KeyB') this.toggleShop();
             }
@@ -548,11 +548,6 @@ class Game {
             });
         }
 
-        // Local tracer
-        const tracer = new Projectile(this.scene, origin, dir, shooter.team);
-        this.projectiles.push(tracer);
-        this.entities.push(tracer);
-
         // Check hits against enemies
         const enemies = this.getAllTargets(shooter.team);
         let closestHit = null;
@@ -571,11 +566,18 @@ class Game {
             }
         }
 
-        // Check if wall is closer
-        const wallHit = this.arenaMap.raycast(origin, dir, closestDist);
+        // Check if wall is closer — if so it blocks the shot and becomes the tracer endpoint
+        const wallHit = this.arenaMap.raycast(origin, dir, maxDist);
         if (wallHit.hit && wallHit.distance < closestDist) {
             closestHit = null; // Wall blocked the shot
+            closestDist = wallHit.distance;
         }
+
+        // Local tracer — ends at the wall/target hit point, not at max range
+        const tracerEnd = origin.clone().add(dir.clone().multiplyScalar(closestDist));
+        const tracer = new Projectile(this.scene, origin, dir, shooter.team, tracerEnd);
+        this.projectiles.push(tracer);
+        this.entities.push(tracer);
 
         if (closestHit) {
             // Use the isHead flag returned directly from raycastEntity (sphere ID),
@@ -592,7 +594,7 @@ class Game {
                     marker.classList.remove('hit-marker-active');
                     void marker.offsetWidth; // trigger reflow
                     marker.classList.add('hit-marker-active');
-                    
+
                     // Optional: hit sound
                     if (this.audio && this.audio.playHit) {
                         // this.audio.playHit(); // Already played on takeDamage, but could be specific hit marker sound
@@ -632,13 +634,16 @@ class Game {
             }
         }
 
-        const wallHit = this.arenaMap.raycast(origin, dir, closestDist);
+        // Check if wall is closer — if so it blocks the shot and becomes the tracer endpoint
+        const wallHit = this.arenaMap.raycast(origin, dir, maxDist);
         if (wallHit.hit && wallHit.distance < closestDist) {
             closestHit = null;
+            closestDist = wallHit.distance;
         }
 
-        // Tracer
-        const tracer = new Projectile(this.scene, origin, dir, bot.team);
+        // Tracer — ends at the wall/target hit point, not at max range
+        const tracerEnd = origin.clone().add(dir.clone().multiplyScalar(closestDist));
+        const tracer = new Projectile(this.scene, origin, dir, bot.team, tracerEnd);
         this.projectiles.push(tracer);
         this.entities.push(tracer);
 
@@ -666,9 +671,9 @@ class Game {
     raycastEntity(origin, dir, entity) {
         // ---------- cached allocations (created once, reused every shot) ----------
         if (!this._ray) {
-            this._ray          = new THREE.Ray();
-            this._bodySphere   = new THREE.Sphere(new THREE.Vector3(), 0.45);
-            this._headSphere   = new THREE.Sphere(new THREE.Vector3(), 0.22);
+            this._ray = new THREE.Ray();
+            this._bodySphere = new THREE.Sphere(new THREE.Vector3(), 0.45);
+            this._headSphere = new THREE.Sphere(new THREE.Vector3(), 0.22);
             this._bodyIntersect = new THREE.Vector3();
             this._headIntersect = new THREE.Vector3();
         }
@@ -712,7 +717,7 @@ class Game {
 
         // Head always wins over body — it's a smaller, deliberate target.
         // If the ray clips both, we reward the more precise aim.
-        if (headHit) return { hit: true, distance: origin.distanceTo(hI), point: hI.clone(), isHead: true  };
+        if (headHit) return { hit: true, distance: origin.distanceTo(hI), point: hI.clone(), isHead: true };
         if (bodyHit) return { hit: true, distance: origin.distanceTo(bI), point: bI.clone(), isHead: false };
         return { hit: false, distance: Infinity, point: null };
     }
@@ -847,7 +852,7 @@ class Game {
         document.getElementById('victoryTitle').textContent = 'VICTORY';
         document.getElementById('victoryTeam').innerHTML = `<span style="color:${winColor}">${winner} TEAM WINS!</span>`;
         document.getElementById('victoryScore').textContent = `RED ${this.redScore} - ${this.blueScore} BLUE`;
-        
+
         // Generate match leaderboard
         const players = [];
         if (this.player) {
@@ -866,13 +871,13 @@ class Game {
                 deaths: bot.deaths || 0
             });
         });
-        
+
         // Sort by kills (descending), then deaths (ascending)
         players.sort((a, b) => {
             if (b.kills !== a.kills) return b.kills - a.kills;
             return a.deaths - b.deaths;
         });
-        
+
         const lbHtml = `
             <table class="fn-leaderboard-table">
                 <thead>
@@ -954,9 +959,9 @@ class Game {
         // synthetic click on the renderer element works here.
         try {
             this.renderer.domElement.click();
-        } catch(e) {
+        } catch (e) {
             // Fallback: try directly (may silently fail in some browsers)
-            try { document.body.requestPointerLock(); } catch(e2) {}
+            try { document.body.requestPointerLock(); } catch (e2) { }
         }
     }
 
@@ -969,30 +974,30 @@ class Game {
         this.blueScore = 0;
 
         // Hide all in-game UI panels
-        document.getElementById('hud').style.display          = 'none';
+        document.getElementById('hud').style.display = 'none';
         document.getElementById('victoryScreen').style.display = 'none';
         if (this.shopOpen) this.toggleShop();
 
         // Show the main menu
-        document.getElementById('mainMenu').style.display      = 'flex';
-        document.getElementById('menuContent').style.display   = 'block';
+        document.getElementById('mainMenu').style.display = 'flex';
+        document.getElementById('menuContent').style.display = 'block';
 
         // Release pointer lock so mouse is usable again
-        try { document.exitPointerLock(); } catch(e) {}
+        try { document.exitPointerLock(); } catch (e) { }
         document.body.style.cursor = 'default';
 
         // Reset player & bots so a fresh match starts properly
         if (this.player) {
             this.player.health = 100;
-            this.player.isDead  = false;
-            this.player.kills   = 0;
-            this.player.deaths  = 0;
+            this.player.isDead = false;
+            this.player.kills = 0;
+            this.player.deaths = 0;
         }
         for (const bot of this.bots) {
-            bot.health  = 100;
-            bot.isDead  = false;
-            bot.kills   = 0;
-            bot.deaths  = 0;
+            bot.health = 100;
+            bot.isDead = false;
+            bot.kills = 0;
+            bot.deaths = 0;
             bot.aiState = 'patrol';
         }
 
@@ -1019,7 +1024,7 @@ class Game {
         const y = (-vec.y * 0.5 + 0.5) * canvas.clientHeight;
 
         el.style.left = x + 'px';
-        el.style.top  = y + 'px';
+        el.style.top = y + 'px';
 
         const container = document.getElementById('dmgNumberLayer');
         if (!container) return;
@@ -1073,7 +1078,7 @@ class Game {
         if (this.matchStarted && (!this.player || this.player.isDead)) return;
 
         const shopUI = document.getElementById('shopUI');
-        
+
         if (shopUI.style.display === 'flex') {
             shopUI.style.display = 'none';
             this.shopOpen = false;
@@ -1159,13 +1164,13 @@ class Game {
             if (item.effect === 'armor') {
                 const cur = Math.ceil(this.armor);
                 desc = `Reinforces combat suit. Absorbs damage (+${item.value} Armor)` +
-                       (cur > 0 ? ` <span style="color:#44aaff">[Current: ${cur}]</span>` : '') + '.';
+                    (cur > 0 ? ` <span style="color:#44aaff">[Current: ${cur}]</span>` : '') + '.';
             }
-            if (item.effect === 'speed') desc = `Modulates stride velocity. +${Math.round(item.value*100 - 100)}% speed. <em>One-time.</em>`;
+            if (item.effect === 'speed') desc = `Modulates stride velocity. +${Math.round(item.value * 100 - 100)}% speed. <em>One-time.</em>`;
             if (item.effect === 'ammo') {
                 const reserves = this.player ? this.player.weapons.map(w => w.type + ': ' + w.reserveAmmo).join(' / ') : '';
                 desc = `Replenishes tactical reserve ammo (+${item.value} rounds each).` +
-                       (reserves ? ` <span style="color:#aaa">[${reserves}]</span>` : '');
+                    (reserves ? ` <span style="color:#aaa">[${reserves}]</span>` : '');
             }
             if (reason) desc += ` <span style="color:#ff8844">${reason}</span>`;
 
@@ -1175,8 +1180,8 @@ class Game {
                 '<div class="shop-item-name">[ ' + item.name.toUpperCase() + ' ]</div>' +
                 '<div class="shop-item-desc">' + desc + '</div>' +
                 '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
-                    '<span style="font-weight:bold;color:oklch(0.75 0.01 240);">Cost: $' + item.cost + '</span>' +
-                    '<button class="shop-buy-btn"' + (available ? '' : ' disabled') + '>' + label + '</button>' +
+                '<span style="font-weight:bold;color:oklch(0.75 0.01 240);">Cost: $' + item.cost + '</span>' +
+                '<button class="shop-buy-btn"' + (available ? '' : ' disabled') + '>' + label + '</button>' +
                 '</div>';
             if (available) {
                 div.querySelector('.shop-buy-btn').addEventListener('click', () => this.buyItem(item));

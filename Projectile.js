@@ -1,11 +1,29 @@
 class Projectile extends GameObject3D {
-    constructor(scene, origin, direction, team) {
+    /**
+     * @param {THREE.Scene}   scene
+     * @param {THREE.Vector3} origin    - world-space start of the tracer
+     * @param {THREE.Vector3} direction - normalised shoot direction
+     * @param {string}        team
+     * @param {THREE.Vector3} [endPoint] - if supplied, the tracer ends here
+     *                                     (wall/target hit point). Otherwise
+     *                                     falls back to origin + dir * 100.
+     */
+    constructor(scene, origin, direction, team, endPoint) {
         super(scene);
         this.name = 'Projectile';
         this.team = team;
         this.lifetime = 0.15;
-        this.position.copy(origin);
-        this.endPoint = origin.clone().add(direction.clone().multiplyScalar(100));
+
+        // Lower the visual start slightly below the camera so the trace line
+        // appears to come from roughly chest/gun level instead of floating
+        // above the character's head when seen by other players.
+        const visualOrigin = origin.clone();
+        visualOrigin.y -= 0.25;
+
+        this.position.copy(visualOrigin);
+        this.endPoint = endPoint
+            ? endPoint.clone()
+            : visualOrigin.clone().add(direction.clone().multiplyScalar(100));
         this.createMesh();
     }
 

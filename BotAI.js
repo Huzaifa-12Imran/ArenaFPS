@@ -13,11 +13,11 @@ class BotAI extends RemotePlayer {
         this.patrolTarget = new THREE.Vector3();
         this.coverTarget = null;
         this.shootCooldown = 0;
-        this.reactionTime = 0.1 + Math.random() * 0.2;
+        this.reactionTime = 0.05 + Math.random() * 0.1;  // faster reaction
         this.reactionTimer = 0;
-        this.accuracy = 0.65 + Math.random() * 0.35;
-        this.sightRange = 50;
-        this.attackRange = 40;
+        this.accuracy = 0.70 + Math.random() * 0.30;
+        this.sightRange = 60;
+        this.attackRange = 55;
         this.moveSpeed = 7.5;
         this.lastSeenEnemyPos = null;
         this.strafeDir = Math.random() > 0.5 ? 1 : -1;
@@ -48,19 +48,19 @@ class BotAI extends RemotePlayer {
 
     pickNewPatrolTarget(forceRandom = false) {
         const WAYPOINTS = [
-            new THREE.Vector3( 0, 1.5,  0), new THREE.Vector3( 25, 1.5,  25), new THREE.Vector3(-25, 1.5,  25),
-            new THREE.Vector3( 25, 1.5, -25), new THREE.Vector3(-25, 1.5, -25), new THREE.Vector3( 25, 1.5,  0),
-            new THREE.Vector3(-25, 1.5,  0), new THREE.Vector3(  0, 1.5,  25), new THREE.Vector3(  0, 1.5, -25)
+            new THREE.Vector3(0, 1.5, 0), new THREE.Vector3(25, 1.5, 25), new THREE.Vector3(-25, 1.5, 25),
+            new THREE.Vector3(25, 1.5, -25), new THREE.Vector3(-25, 1.5, -25), new THREE.Vector3(25, 1.5, 0),
+            new THREE.Vector3(-25, 1.5, 0), new THREE.Vector3(0, 1.5, 25), new THREE.Vector3(0, 1.5, -25)
         ];
         if (!this.patrolTarget) this.patrolTarget = this.position.clone();
-        
+
         let bestTarget = WAYPOINTS[Math.floor(Math.random() * WAYPOINTS.length)];
-        
+
         if (!forceRandom) {
             bestTarget = this.patrolTarget.clone();
-            for(let attempt=0; attempt<5; attempt++) {
+            for (let attempt = 0; attempt < 5; attempt++) {
                 const potential = WAYPOINTS[Math.floor(Math.random() * WAYPOINTS.length)];
-                if(potential.distanceTo(this.position) > 5) {
+                if (potential.distanceTo(this.position) > 5) {
                     // Safely check path obstruction
                     const arena = window.game && window.game.arenaMap;
                     if (!arena || !arena.isPathObstructed || !arena.isPathObstructed(this.position, potential, 0.5)) {
@@ -70,7 +70,7 @@ class BotAI extends RemotePlayer {
                 }
             }
         }
-        
+
         this.patrolTarget.copy(bestTarget);
     }
 
@@ -79,9 +79,14 @@ class BotAI extends RemotePlayer {
         const enemies = window.game.getAllTargets(this.team);
         let nearest = null;
         let nearestDist = Infinity;
+        // Prefer the local player as a target — gives higher weight so bots
+        // choose them even if a bot enemy is slightly closer.
+        const playerTarget = window.game.player;
         for (const enemy of enemies) {
             if (enemy.isDead) continue;
-            const dist = this.position.distanceTo(enemy.position);
+            let dist = this.position.distanceTo(enemy.position);
+            // Bias distance toward the player so bots actively hunt the player
+            if (enemy === playerTarget) dist *= 0.55;
             if (dist < nearestDist) {
                 nearestDist = dist;
                 nearest = enemy;
@@ -94,9 +99,9 @@ class BotAI extends RemotePlayer {
         if (!window.game || !window.game.arenaMap) return false;
         const dist = this.position.distanceTo(target.position);
         if (dist > this.sightRange) return false;
-        
+
         const dir = target.position.clone().sub(this.position).normalize();
-        
+
         // FIX (Bug 7): In Three.js the default forward direction is -Z.
         // A Y-rotation of 0 should give forward = (0,0,-1), so Z must be
         // -cos(angle).  The original +cos(angle) pointed the cone *backwards*,
@@ -106,10 +111,10 @@ class BotAI extends RemotePlayer {
         this._flatDir.set(dir.x, 0, dir.z).normalize();
         const forward = this._fwd;
         const flatDir = this._flatDir;
-        if (forward.dot(flatDir) < 0.5) return false;
-        
+        if (forward.dot(flatDir) < 0.1) return false; // ~84° half-angle FOV — wide enough to track moving players
+
         const eyePos = this.position.clone();
-        eyePos.y += 1.2;
+        eyePos.y += 0.05; // head/eye height (position.y is capsule centre, head is +0.05)
         const result = window.game.arenaMap.raycast(eyePos, dir, dist);
         return !result.hit || result.distance >= dist - 1;
     }
@@ -217,14 +222,16 @@ class BotAI extends RemotePlayer {
         // Create hitscan from bot
         if (window.game) {
             const eyePos = this.position.clone();
-            eyePos.y += 1.2; // bot eye height above feet
+            // Bot position.y is the physics capsule centre (world Y≈1.5 on floor).
+            // Head centre is at position.y + 0.05 (world Y≈1.55).
+            // Use +0.05 so the tracer visually originates from head/eye level.
+            eyePos.y += 0.05; // bot eye/head height
 
-            // Aim at the enemy body centre (feet + 0.75), not their feet.
-            // This matches the body sphere centre used in raycastEntity.
+            // Aim at the enemy body centre (position.y - 0.65 = mid-torso) or
+            // head (position.y + 0.05). Randomise between waist and head.
             const aimTarget = target.position.clone();
-            // Randomise vertical aim between feet (0.3) and top of head (1.7)
-            // so headshots are incidental, not guaranteed.
-            aimTarget.y += 0.3 + Math.random() * 1.4;
+            // Range: -0.65 (torso centre) to +0.05 (head centre)
+            aimTarget.y += -0.65 + Math.random() * 0.7;
 
             const dir = aimTarget.sub(eyePos).normalize();
             // Add lateral + vertical inaccuracy spread
@@ -291,16 +298,23 @@ class BotAI extends RemotePlayer {
                     break;
                 }
                 this.reactionTimer -= dt;
-                if (canSee && distToEnemy < this.attackRange) {
-                    if (this.reactionTimer <= 0) {
-                        this.aiState = 'attack';
-                    }
-                }
                 if (canSee) {
                     this.lastSeenEnemyPos = enemy.position.clone();
-                    this.moveToward(enemy.position, dt);
+                    // Move to close range, then attack even before fully in sight
+                    if (distToEnemy < this.attackRange) {
+                        if (this.reactionTimer <= 0) {
+                            this.aiState = 'attack';
+                        }
+                    } else {
+                        this.moveToward(enemy.position, dt);
+                    }
                 } else if (this.lastSeenEnemyPos) {
+                    // Still chasing last known position
                     this.moveToward(this.lastSeenEnemyPos, dt);
+                    if (distToEnemy < this.attackRange * 0.6) {
+                        // Close enough — just attack even without direct sight
+                        if (this.reactionTimer <= 0) this.aiState = 'attack';
+                    }
                     // Re-check: moveToward() can null lastSeenEnemyPos when bot is stuck
                     if (this.lastSeenEnemyPos && this.position.distanceTo(this.lastSeenEnemyPos) < 3) {
                         this.lastSeenEnemyPos = null;
@@ -320,16 +334,28 @@ class BotAI extends RemotePlayer {
                     break;
                 }
                 if (!canSee) {
-                    this.lastSeenEnemyPos = enemy.position.clone();
-                    this.aiState = 'chase';
+                    // Don't immediately drop out — keep shooting at last known pos briefly
+                    if (this.lastSeenEnemyPos && distToEnemy < this.attackRange) {
+                        this.tryShoot(enemy); // speculative fire
+                        this.moveToward(this.lastSeenEnemyPos, dt);
+                    } else {
+                        this.lastSeenEnemyPos = enemy.position.clone();
+                        this.aiState = 'chase';
+                    }
                     break;
                 }
                 // Strafe while shooting
+                this.lastSeenEnemyPos = enemy.position.clone();
                 this.strafeAround(enemy.position, dt);
                 this.tryShoot(enemy);
 
+                // If enemy moved far away, chase them down
+                if (distToEnemy > this.attackRange * 1.2) {
+                    this.moveToward(enemy.position, dt);
+                }
+
                 // Seek cover if low health
-                if (this.health < 40) {
+                if (this.health < 30) {
                     const cover = this.findNearestCover(enemy.position);
                     if (cover) {
                         this.coverTarget = cover;
@@ -364,7 +390,7 @@ class BotAI extends RemotePlayer {
 
     update(dt) {
         this.updateAI(dt);
-        
+
         // Let RemotePlayer handle the animation speed logic (idle/walk/run),
         // the mixer ticking, name tag billboarding, and mesh updates.
         super.update(dt);
